@@ -1,6 +1,6 @@
-# Enterprise AI Accelerator - Day 2 - Part 2
+# Enterprise AI Accelerator - Day 3
 
-## Model Context Protocol (MCP) ##
+## Building Out Your Capstone Project ##
 
 These instructions will guide you through configuring a GitHub Codespaces environment that you can use to do the labs. 
 
@@ -13,7 +13,7 @@ To do this, when logged in to GitHub, go to https://github.com/settings/codespac
 
 **2. Click on the button below to start a new codespace from this repository.**
 
-Click here ➡️  [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/skillrepos/aia-day2-b?quickstart=1)
+Click here ➡️  [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/skillrepos/aia-capstone-starter?quickstart=1)
 
 <br><br>
 
