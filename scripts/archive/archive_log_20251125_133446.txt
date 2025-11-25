@@ -1,0 +1,36 @@
+============================================================
+UNUSED FILE ARCHIVE LOG
+Project: /Users/developer/aia-day2-b/scripts
+Date: 2025-11-25T13:34:46.918786
+Mode: LIVE
+============================================================
+
+[2025-11-25 13:34:46] [INFO] ============================================================
+[2025-11-25 13:34:46] [INFO] Starting Unused File Archiver
+[2025-11-25 13:34:46] [INFO] Mode: LIVE
+[2025-11-25 13:34:46] [INFO] ============================================================
+[2025-11-25 13:34:46] [WARNING] Warning: Not a git repository. Files will be moved instead of git mv'd
+[2025-11-25 13:34:46] [INFO] Starting unused file analysis...
+[2025-11-25 13:34:46] [INFO] Project root: /Users/developer/aia-day2-b/scripts
+[2025-11-25 13:34:46] [INFO] Found 18 total files to analyze
+[2025-11-25 13:34:46] [INFO] Marked 11 setup/config files as used
+[2025-11-25 13:34:46] [INFO] Reference analysis complete after 1 iterations
+[2025-11-25 13:34:46] [INFO] Total used files: 11
+[2025-11-25 13:34:46] [INFO] Unused files identified: 7
+[2025-11-25 13:34:46] [INFO] 
+Unused files to be archived:
+[2025-11-25 13:34:46] [INFO]   - alt-setup.bat
+[2025-11-25 13:34:46] [INFO]   - alt-setup.ps1
+[2025-11-25 13:34:46] [INFO]   - archive_unused.py
+[2025-11-25 13:34:46] [INFO]   - local_mcpi.ps1
+[2025-11-25 13:34:46] [INFO]   - mcp_explorer.py
+[2025-11-25 13:34:46] [INFO]   - warmup_mcp.py
+[2025-11-25 13:34:46] [INFO]   - warmup_model.py
+[2025-11-25 13:34:46] [INFO] Archived: alt-setup.bat -> archive/alt-setup.bat
+[2025-11-25 13:34:46] [INFO] Archived: alt-setup.ps1 -> archive/alt-setup.ps1
+[2025-11-25 13:34:46] [INFO] Archived: archive_unused.py -> archive/archive_unused.py
+[2025-11-25 13:34:46] [INFO] Archived: local_mcpi.ps1 -> archive/local_mcpi.ps1
+[2025-11-25 13:34:46] [INFO] Archived: mcp_explorer.py -> archive/mcp_explorer.py
+[2025-11-25 13:34:46] [INFO] Archived: warmup_mcp.py -> archive/warmup_mcp.py
+[2025-11-25 13:34:46] [INFO] Archived: warmup_model.py -> archive/warmup_model.py
+[2025-11-25 13:34:46] [INFO] Archive complete: 7 files archived, 0 failures
