@@ -1,4 +1,4 @@
-
+{
   // Use the official base image
   "image": "mcr.microsoft.com/devcontainers/base:bookworm",
 
