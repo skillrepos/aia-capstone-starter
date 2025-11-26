@@ -318,26 +318,30 @@ class OmniTechSupportServer:
         user_lower = user_query.lower()
         scores = {}
 
-        # Score based on keyword matching
+        # Score based on keyword matching (primary signal)
         for query_name, config in CANONICAL_QUERIES.items():
             score = 0
             keywords = config.get("keywords", [])
 
             for keyword in keywords:
                 if keyword in user_lower:
-                    score += 1
+                    # Give higher weight to longer/more specific keywords
+                    score += len(keyword.split())
 
-            scores[query_name] = score / len(keywords) if keywords else 0
+            scores[query_name] = score
 
-        # Also check example queries
+        # Also check example queries (secondary signal, weighted lower)
         for query_name, config in CANONICAL_QUERIES.items():
             for example in config["example_queries"]:
-                example_words = set(example.lower().split())
-                user_words = set(user_lower.split())
+                # Only count content words, not common words like "how", "do", "i", "my"
+                stop_words = {"how", "do", "i", "my", "the", "a", "an", "is", "it", "to", "can", "you", "what"}
+                example_words = set(example.lower().split()) - stop_words
+                user_words = set(user_lower.split()) - stop_words
                 overlap = len(example_words.intersection(user_words))
-                if overlap > 0:
-                    similarity = overlap / max(len(example_words), len(user_words))
-                    scores[query_name] = max(scores.get(query_name, 0), similarity)
+                if overlap > 0 and example_words:
+                    similarity = overlap / len(example_words)
+                    # Add to score instead of replacing (weighted at 0.5)
+                    scores[query_name] = scores.get(query_name, 0) + (similarity * 0.5)
 
         # Find best match
         if not scores or max(scores.values()) == 0:
@@ -349,7 +353,9 @@ class OmniTechSupportServer:
             }
         else:
             best_query = max(scores, key=scores.get)
-            confidence = min(scores[best_query], 1.0)
+            best_score = scores[best_query]
+            # Normalize confidence: score of 2+ keywords = high confidence
+            confidence = min(best_score / 2.0, 1.0)
 
             alternatives = [
                 {"query": name, "score": round(score, 3)}
