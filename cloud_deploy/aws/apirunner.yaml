@@ -1,0 +1,31 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# AWS App Runner Configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# App Runner is the simplest way to deploy containers on AWS.
+# It handles load balancing, scaling, and HTTPS automatically.
+#
+# Deploy with:
+#   aws apprunner create-service --cli-input-yaml file://apprunner.yaml
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+ServiceName: omnitech-support
+SourceConfiguration:
+  ImageRepository:
+    ImageIdentifier: <YOUR_ECR_IMAGE_URI>
+    ImageRepositoryType: ECR
+    ImageConfiguration:
+      Port: "7860"
+      RuntimeEnvironmentSecrets:
+        HF_TOKEN: "arn:aws:secretsmanager:<region>:<account>:secret:hf-token"
+InstanceConfiguration:
+  Cpu: "1024"      # 1 vCPU
+  Memory: "2048"   # 2 GB RAM
+HealthCheckConfiguration:
+  Protocol: HTTP
+  Path: "/"
+  Interval: 10
+  Timeout: 5
+  HealthyThreshold: 1
+  UnhealthyThreshold: 5
