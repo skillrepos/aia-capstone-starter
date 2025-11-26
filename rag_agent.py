@@ -1,26 +1,9 @@
 #!/usr/bin/env python3
 """
-OmniTech Customer Support RAG Agent
+OmniTech Customer Support RAG Agent - FULL VERSION
 ═══════════════════════════════════════════════════════════════════════════════
 
-This agent uses the MCP server for all knowledge access and classification.
-
-ARCHITECTURE:
-• MCP Server = Knowledge Layer (owns vector DB, PDFs, classification)
-• RAG Agent  = Orchestration Layer (routing, LLM execution, workflow)
-
-WORKFLOWS:
-1. CLASSIFICATION WORKFLOW (for support queries):
-   classify → get template → retrieve knowledge → execute LLM
-
-2. DIRECT RAG WORKFLOW (for exploratory queries):
-   search knowledge → execute LLM
-
-STARTING POINT: This file contains the classification workflow from
-rag_agent_classification.py, adapted for HuggingFace Inference API.
-
-Lab 2: Enhance error handling and fallbacks
-Lab 3: Add Gradio integration hooks
+Complete agent with:
 """
 
 import asyncio
@@ -52,10 +35,6 @@ logger = logging.getLogger("omnitech-agent")
 # ╚══════════════════════════════════════════════════════════════════════════╝
 
 # HuggingFace Inference API
-# Set HF_TOKEN environment variable for authenticated access
-HF_TOKEN = os.environ.get("HF_TOKEN", "")
-HF_MODEL = "meta-llama/Llama-3.2-3B-Instruct"
-HF_CLIENT = InferenceClient(token=HF_TOKEN) if HF_TOKEN else None
 
 if not HF_TOKEN:
     print("WARNING: HF_TOKEN not set. LLM calls will be skipped.")
@@ -64,17 +43,12 @@ if not HF_TOKEN:
     print()
 
 # Support detection keywords (for routing decision)
-SUPPORT_KEYWORDS = {
-    "security": ["password", "reset", "2fa", "authentication", "hacked", "compromised", "login"],
-    "device": ["device", "won't turn", "frozen", "screen", "factory reset", "broken", "power"],
-    "shipping": ["ship", "delivery", "track", "order", "arrive", "package"],
-    "returns": ["return", "refund", "warranty", "exchange", "money back"],
-}
 
 # ANSI colors for terminal output
 BLUE = "\033[34m"
 GREEN = "\033[32m"
 CYAN = "\033[36m"
+YELLOW = "\033[33m"
 RESET = "\033[0m"
 
 # ╔══════════════════════════════════════════════════════════════════════════╗
@@ -82,7 +56,6 @@ RESET = "\033[0m"
 # ╚══════════════════════════════════════════════════════════════════════════╝
 
 def is_support_query(query: str) -> bool:
-    """Determine if this is a customer support query vs exploratory."""
     query_lower = query.lower()
 
     # Check for support-related keywords
@@ -91,17 +64,6 @@ def is_support_query(query: str) -> bool:
             if keyword in query_lower:
                 return True
 
-    # Check for question patterns indicating support need
-    support_patterns = [
-        r"how do i",
-        r"how can i",
-        r"what should i",
-        r"can you help",
-        r"i need help",
-        r"my \w+ (is|isn't|won't)",
-        r"problem with",
-        r"issue with"
-    ]
 
     for pattern in support_patterns:
         if re.search(pattern, query_lower):
@@ -132,35 +94,16 @@ class OmniTechAgent:
         self.session: Optional[ClientSession] = None
         self.exit_stack: Optional[AsyncExitStack] = None
         self.mcp_calls_log: List[Dict] = []
+        self.available_tools: List[str] = []
 
     # ─── MCP Connection ────────────────────────────────────────────────────
 
     async def connect(self) -> bool:
-        """Start the MCP server and establish connection."""
         try:
             self.exit_stack = AsyncExitStack()
 
-            server_params = StdioServerParameters(
-                command=sys.executable,
-                args=["mcp_server.py"],
-                env=None
-            )
 
-            stdio_transport = await self.exit_stack.enter_async_context(
-                stdio_client(server_params)
-            )
-            read_stream, write_stream = stdio_transport
-
-            self.session = await self.exit_stack.enter_async_context(
-                ClientSession(read_stream, write_stream)
-            )
-
-            await self.session.initialize()
-
-            # Verify connection by listing tools
-            tools_response = await self.session.list_tools()
-            logger.info(f"Connected to MCP server. Tools: {[t.name for t in tools_response.tools]}")
-            return True
+            # Verify connection and get available tools
 
         except Exception as e:
             logger.error(f"Failed to connect to MCP server: {e}")
@@ -203,6 +146,28 @@ class OmniTechAgent:
             logger.error(f"Tool call failed ({tool_name}): {e}")
             return {"error": str(e)}
 
+    # ─── Customer Context ──────────────────────────────────────────────────
+
+    async def get_customer_context(self, email: str) -> str:
+        """Get customer context string for prompts."""
+        if "lookup_customer" not in self.available_tools:
+            return "Customer: Unknown"
+
+        customer = await self.call_tool("lookup_customer", {"email": email})
+
+        if customer.get("found"):
+            name = customer.get("name", "Unknown")
+            tier = customer.get("tier", "Standard")
+            tickets = customer.get("support_tickets", 0)
+
+            context = f"Customer: {name} ({tier} tier)"
+            if tickets > 0:
+                context += f" - {tickets} previous tickets"
+
+            return context
+        else:
+            return f"Customer: {email} (not in database)"
+
     # ─── LLM Integration ───────────────────────────────────────────────────
 
     def query_llm(self, prompt: str) -> str:
@@ -216,19 +181,6 @@ class OmniTechAgent:
             })
 
         try:
-            logger.info("Calling HuggingFace LLM...")
-            # Use chat_completion for instruct models
-            response = HF_CLIENT.chat_completion(
-                messages=[{"role": "user", "content": prompt}],
-                model=HF_MODEL,
-                max_tokens=500,
-                temperature=0.7
-            )
-
-            # Extract the response text
-            result_text = response.choices[0].message.content
-            logger.info(f"LLM response received ({len(result_text)} chars)")
-            return result_text
 
         except Exception as e:
             error_msg = str(e)
@@ -250,19 +202,20 @@ class OmniTechAgent:
 
     # ─── Classification Workflow ───────────────────────────────────────────
 
-    async def handle_support_query(self, query: str) -> Dict[str, Any]:
+    async def handle_support_query(self, query: str, customer_email: str = None) -> Dict[str, Any]:
         """
-        Handle customer support queries using the 4-step classification workflow.
 
-        Steps:
-        1. Classify query into support category
-        2. Get prompt template for category
-        3. Retrieve relevant knowledge
-        4. Execute LLM with template + knowledge
         """
         workflow_log = []
+        start_time = datetime.now()
 
         try:
+            # Get customer context if email provided
+            customer_context = ""
+            if customer_email:
+                customer_context = await self.get_customer_context(customer_email)
+                workflow_log.append(f"[INFO] {customer_context}")
+
             # Step 1: Classify
             workflow_log.append("[1/4] Classifying query...")
             classification = await self.call_tool("classify_query", {"user_query": query})
@@ -296,42 +249,57 @@ class OmniTechAgent:
             # Step 4: Execute LLM
             workflow_log.append("[4/4] Generating response...")
 
-            if template:
-                formatted_prompt = template.format(query=query, knowledge=knowledge)
-            else:
-                formatted_prompt = f"""Please help with this customer question: {query}
-
-Based on this documentation:
-{knowledge}
-
-Provide a helpful response."""
-
-            # Add JSON response format instruction
-            full_prompt = f"""{formatted_prompt}
-
-Respond with JSON containing:
-- "response": your answer (2-3 sentences)
-- "action_needed": "none", "create_ticket", or "escalate"
-- "confidence": 0-1
-
-JSON Response:"""
 
             llm_response = self.query_llm(full_prompt)
 
-            # Parse response
+            # Parse response - handle JSON wrapped in markdown code blocks
+            result = None
             try:
                 result = json.loads(llm_response)
             except json.JSONDecodeError:
-                result = {
-                    "response": llm_response[:500] if len(llm_response) > 500 else llm_response,
-                    "action_needed": "none",
-                    "confidence": 0.6
-                }
+                # Try to extract JSON from markdown code blocks (```json ... ```)
+                json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', llm_response, re.DOTALL)
+                if json_match:
+                    try:
+                        result = json.loads(json_match.group(1))
+                    except json.JSONDecodeError:
+                        pass
+
+                # Also try to find raw JSON object in the response
+                if result is None:
+                    json_match = re.search(r'\{[^{}]*"response"[^{}]*\}', llm_response, re.DOTALL)
+                    if json_match:
+                        try:
+                            result = json.loads(json_match.group(0))
+                        except json.JSONDecodeError:
+                            pass
+
+                # Fallback if no valid JSON found
+                if result is None:
+                    # Clean up the response - remove JSON artifacts if present
+                    clean_response = re.sub(r'```(?:json)?|```', '', llm_response).strip()
+                    result = {
+                        "response": clean_response[:500] if len(clean_response) > 500 else clean_response,
+                        "action_needed": "none",
+                        "confidence": 0.6
+                    }
 
             # Handle knowledge-base-only fallback
             if result.get("response") == "KNOWLEDGE_BASE_ONLY":
                 result["response"] = f"Based on our {description}:\n\n{knowledge[:400]}..."
                 result["confidence"] = 0.8
+
+            # Create ticket if needed
+            if result.get("action_needed") == "create_ticket" and customer_email:
+                if "create_support_ticket" in self.available_tools:
+                    ticket = await self.call_tool("create_support_ticket", {
+                        "customer_email": customer_email,
+                        "issue_type": category,
+                        "description": query,
+                        "priority": "medium"
+                    })
+                    result["ticket_created"] = ticket
+                    workflow_log.append(f"[INFO] Created ticket: {ticket.get('id', 'unknown')}")
 
             # Add metadata
             result["classification"] = {
@@ -343,6 +311,9 @@ JSON Response:"""
             result["workflow_log"] = workflow_log
             result["sources"] = sources
             result["llm_prompt"] = full_prompt
+            result["llm_model"] = HF_MODEL
+            result["customer_email"] = customer_email
+            result["processing_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
 
             workflow_log.append("[SUCCESS] Response generated")
             return result
@@ -356,11 +327,17 @@ JSON Response:"""
                 "workflow_log": workflow_log
             }
 
-    # ─── Direct RAG Workflow ───────────────────────────────────────────────
 
-    async def handle_exploratory_query(self, query: str) -> Dict[str, Any]:
+    async def handle_exploratory_query(self, query: str, customer_email: str = None) -> Dict[str, Any]:
         """Handle exploratory queries using direct RAG search."""
+        start_time = datetime.now()
+
         try:
+            # Get customer context if email provided
+            customer_context = ""
+            if customer_email:
+                customer_context = await self.get_customer_context(customer_email)
+
             # Search across all knowledge
             search_result = await self.call_tool("search_knowledge", {
                 "query": query,
@@ -382,28 +359,39 @@ JSON Response:"""
             knowledge = "\n\n---\n\n".join(knowledge_parts)
 
             # Query LLM
-            prompt = f"""Based on this documentation:
-{knowledge}
-
-Answer this question: {query}
-
-Respond with JSON containing:
-- "response": your answer (2-3 sentences)
-- "action_needed": "none"
-- "confidence": 0-1
-
-JSON Response:"""
 
             llm_response = self.query_llm(prompt)
 
+            # Parse response - handle JSON wrapped in markdown code blocks
+            result = None
             try:
                 result = json.loads(llm_response)
             except json.JSONDecodeError:
-                result = {
-                    "response": llm_response[:500],
-                    "action_needed": "none",
-                    "confidence": 0.6
-                }
+                # Try to extract JSON from markdown code blocks (```json ... ```)
+                json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', llm_response, re.DOTALL)
+                if json_match:
+                    try:
+                        result = json.loads(json_match.group(1))
+                    except json.JSONDecodeError:
+                        pass
+
+                # Also try to find raw JSON object in the response
+                if result is None:
+                    json_match = re.search(r'\{[^{}]*"response"[^{}]*\}', llm_response, re.DOTALL)
+                    if json_match:
+                        try:
+                            result = json.loads(json_match.group(0))
+                        except json.JSONDecodeError:
+                            pass
+
+                # Fallback if no valid JSON found
+                if result is None:
+                    clean_response = re.sub(r'```(?:json)?|```', '', llm_response).strip()
+                    result = {
+                        "response": clean_response[:500] if len(clean_response) > 500 else clean_response,
+                        "action_needed": "none",
+                        "confidence": 0.6
+                    }
 
             if result.get("response") == "KNOWLEDGE_BASE_ONLY":
                 result["response"] = f"Here's what I found:\n\n{knowledge[:400]}..."
@@ -411,6 +399,9 @@ JSON Response:"""
             result["workflow"] = "direct_rag"
             result["sources"] = sources
             result["llm_prompt"] = prompt
+            result["llm_model"] = HF_MODEL
+            result["customer_email"] = customer_email
+            result["processing_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
             return result
 
         except Exception as e:
@@ -423,19 +414,22 @@ JSON Response:"""
 
     # ─── Main Query Handler ────────────────────────────────────────────────
 
-    async def process_query(self, query: str) -> Dict[str, Any]:
+    async def process_query(self, query: str, customer_email: str = None) -> Dict[str, Any]:
         """
         Process a customer query, routing to appropriate workflow.
 
         Support queries → Classification workflow
         Exploratory queries → Direct RAG search
         """
-        if is_support_query(query):
-            logger.info("[ROUTING] Support query → Classification workflow")
-            return await self.handle_support_query(query)
-        else:
-            logger.info("[ROUTING] Exploratory query → Direct RAG")
-            return await self.handle_exploratory_query(query)
+
+    # ─── Server Stats ──────────────────────────────────────────────────────
+
+    async def get_server_stats(self) -> Dict[str, Any]:
+        """Get MCP server statistics."""
+        if "get_server_stats" not in self.available_tools:
+            return {"error": "Stats not available"}
+
+        return await self.call_tool("get_server_stats", {})
 
 
 # ╔══════════════════════════════════════════════════════════════════════════╗
@@ -458,19 +452,32 @@ class SyncAgent:
             success = self.loop.run_until_complete(self.agent.connect())
             if not success:
                 raise Exception("Failed to connect to MCP server")
+            logger.info("SyncAgent initialized successfully")
         except Exception as e:
             logger.error(f"Initialization failed: {e}")
             raise
 
-    def process_query(self, query: str) -> Dict[str, Any]:
+    def process_query(self, query: str, customer_email: str = None) -> Dict[str, Any]:
         """Synchronous query processing."""
         if not self.loop:
-            return {"error": "Agent not initialized"}
-        return self.loop.run_until_complete(self.agent.process_query(query))
+            return {"error": "Agent not initialized", "response": "System error"}
+        return self.loop.run_until_complete(
+            self.agent.process_query(query, customer_email)
+        )
 
     def get_mcp_log(self) -> List[Dict]:
         """Get MCP call log."""
         return self.agent.mcp_calls_log
+
+    def get_server_stats(self) -> Dict[str, Any]:
+        """Get server stats."""
+        if not self.loop:
+            return {"error": "Agent not initialized"}
+        return self.loop.run_until_complete(self.agent.get_server_stats())
+
+    def get_available_tools(self) -> List[str]:
+        """Get list of available MCP tools."""
+        return self.agent.available_tools
 
     def __del__(self):
         """Cleanup."""
@@ -500,7 +507,16 @@ async def interactive_mode():
         print("Make sure mcp_server.py is in the current directory.")
         return
 
-    print("Connected! Type 'exit' to quit, 'demo' for sample queries.\n")
+    print(f"Connected! Available tools: {agent.available_tools}")
+    print("\nCommands:")
+    print("  'exit' - quit")
+    print("  'demo' - run sample queries")
+    print("  'stats' - show server statistics")
+    print("  'email:xxx' - set customer email for context")
+    print()
+
+    customer_email = "john.doe@email.com"
+    print(f"Default customer: {customer_email}")
 
     sample_queries = [
         "How do I reset my password?",
@@ -511,29 +527,40 @@ async def interactive_mode():
 
     while True:
         try:
-            user_input = input(f"{GREEN}Query:{RESET} ").strip()
+            user_input = input(f"\n{GREEN}Query:{RESET} ").strip()
 
             if user_input.lower() == "exit":
                 break
             elif user_input.lower() == "demo":
                 for q in sample_queries:
                     print(f"\n{GREEN}Query:{RESET} {q}")
-                    result = await agent.process_query(q)
+                    result = await agent.process_query(q, customer_email)
                     response = result.get("response", "No response")
                     workflow = result.get("workflow", "unknown")
-                    print(f"{BLUE}[{workflow}]{RESET}")
-                    print(f"{CYAN}{response}{RESET}\n")
+                    print(f"{YELLOW}[{workflow}]{RESET}")
+                    print(f"{CYAN}{response}{RESET}")
+            elif user_input.lower() == "stats":
+                stats = await agent.get_server_stats()
+                print(f"\n{BLUE}Server Stats:{RESET}")
+                print(json.dumps(stats, indent=2))
+            elif user_input.lower().startswith("email:"):
+                customer_email = user_input[6:].strip()
+                print(f"Customer set to: {customer_email}")
             elif user_input:
-                result = await agent.process_query(user_input)
+                result = await agent.process_query(user_input, customer_email)
                 response = result.get("response", "No response")
                 workflow = result.get("workflow", "unknown")
                 sources = result.get("sources", [])
+                category = result.get("classification", {}).get("category", "")
 
-                print(f"\n{BLUE}[{workflow}]{RESET}")
+                print(f"\n{YELLOW}[{workflow}]{RESET}", end="")
+                if category:
+                    print(f" {BLUE}({category}){RESET}")
+                else:
+                    print()
                 print(f"{CYAN}{response}{RESET}")
                 if sources:
                     print(f"\n{BLUE}Sources: {', '.join(sources)}{RESET}")
-                print()
 
         except KeyboardInterrupt:
             break
