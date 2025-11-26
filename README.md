@@ -37,18 +37,32 @@ The codespace is ready to use when you see output like the one shown below in it
 
 The RAG agent uses HuggingFace's Inference API to generate LLM responses. You'll need a free API token:
 
-1. Go to https://huggingface.co and create an account (or log in)
-2. Navigate to https://huggingface.co/settings/tokens
-3. Click "Create new token", give it a name, and select "Read" access
-4. Copy the token (it starts with `hf_`)
+1. Go to (https://huggingface.co)[https://huggingface.co] and log in if you already have an account. If you need to create an account, click the *Sign Up* button or visit (https://huggingface.co/join)[https://huggingface.co/join]
 
-Set the token in your terminal before running the agent:
+![HF login](./images/aia-3-19.png?raw=true "HF login")
+
+<br>
+   
+2. Navigate to (https://huggingface.co/settings/tokens)[https://huggingface.co/settings/tokens].  Click on *+ Create new token*.
+
+![Get token](./images/aia-3-20.png?raw=true "Get token")
+
+
+3. Select **Read** for the token type and provide a name.
+
+![Read token](./images/aia-3-21.png?raw=true "Read token")
+   
+6. Click on the *Create token* button and copy the token (it starts with `hf_`). Save it somewhere.
+
+![Save/copy token](./images/aia-3-22.png?raw=true "Save/copy token")
+
+7. For all runs of agents in the labs, make sure the token is set in your terminal before running the agent:
 
 ```bash
 export HF_TOKEN="hf_your_token_here"
 ```
 
-To make this permanent for your codespace session, add it to your shell profile:
+8. Alternatively, to make this permanent for your codespace session, add it to your shell profile:
 
 ```bash
 echo 'export HF_TOKEN="hf_your_token_here"' >> ~/.bashrc
