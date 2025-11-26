@@ -133,6 +133,20 @@ An AI-powered customer support chatbot built with:
 - **ChromaDB** for vector-based document search (RAG)
 - **HuggingFace Inference API** for LLM responses
 
+## ⚠️ IMPORTANT: Required Setup
+
+**This Space requires `HF_TOKEN` to be set as a secret, or the LLM won't work!**
+
+Without `HF_TOKEN`, you'll see truncated responses like:
+> "Based on our Return policies: OmniTech Solutions Consumer Returns..."
+
+**How to fix:**
+1. Go to **Settings** → **Repository secrets**
+2. Click **New secret**
+3. Name: `HF_TOKEN`
+4. Value: Your HuggingFace API token from https://huggingface.co/settings/tokens
+5. Click **Save** and the Space will restart automatically
+
 ## Features
 
 - 🔍 **RAG-powered responses** - Answers based on product documentation
@@ -140,17 +154,12 @@ An AI-powered customer support chatbot built with:
 - 👤 **Customer context** - Looks up customer information for personalized responses
 - 📊 **Developer mode** - Toggle to see debug info, MCP stats, and knowledge search
 
-## Environment Variables
-
-Set the following secret in your HF Space settings:
-
-- `HF_TOKEN` - Your HuggingFace API token for LLM inference
-
 ## Usage
 
-1. Select a customer from the dropdown
-2. Type your question in the chat
-3. Toggle "Developer Mode" to see debug information
+1. **Set HF_TOKEN first** (see above)
+2. Select a customer from the dropdown
+3. Type your question in the chat
+4. Toggle "Developer Mode" to see debug information
 
 ## Support Categories
 
@@ -161,6 +170,32 @@ Set the following secret in your HF Space settings:
 
 ---
 *Built for the Enterprise AI Accelerator Capstone*
+EOF
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Create .env.example to document required environment variables
+# ─────────────────────────────────────────────────────────────────────────────
+echo -e "${GREEN}Creating .env.example...${NC}"
+
+cat > "$OUTPUT_DIR/.env.example" << 'EOF'
+# ═══════════════════════════════════════════════════════════════════════════════
+# Environment Variables for OmniTech Customer Support
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# IMPORTANT: On HuggingFace Spaces, set these as "Repository secrets" in Settings
+#
+# DO NOT commit actual values to git! This file is just documentation.
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# HuggingFace API Token (REQUIRED)
+# Get your token from: https://huggingface.co/settings/tokens
+# This is used to call the LLM for generating responses
+HF_TOKEN=your_huggingface_token_here
+
+# Optional: Override the default LLM model
+# Default: meta-llama/Llama-3.1-8B-Instruct
+# HF_MODEL=meta-llama/Llama-3.1-8B-Instruct
 EOF
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -215,5 +250,17 @@ echo "  3. git add ."
 echo "  4. git commit -m 'Initial HF Spaces deployment'"
 echo "  5. Create a new Space on huggingface.co/spaces"
 echo "  6. Push to the Space repository"
-echo "  7. Set HF_TOKEN secret in Space settings"
+echo ""
+echo -e "${YELLOW}⚠️  CRITICAL: Set HF_TOKEN secret${NC}"
+echo "  Without this, the LLM won't work and responses will be truncated!"
+echo ""
+echo "  How to set HF_TOKEN:"
+echo "    1. Go to your Space on huggingface.co"
+echo "    2. Click 'Settings' tab"
+echo "    3. Scroll to 'Repository secrets'"
+echo "    4. Click 'New secret'"
+echo "    5. Name: HF_TOKEN"
+echo "    6. Value: Your HuggingFace API token from"
+echo "       https://huggingface.co/settings/tokens"
+echo "    7. Save and restart the Space"
 echo ""
