@@ -1,0 +1,50 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Google App Engine Flexible Configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# App Engine Flexible runs Docker containers with automatic scaling.
+#
+# Deploy with:
+#   gcloud app deploy app.yaml
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+runtime: custom
+env: flex
+
+# Resource allocation
+resources:
+  cpu: 1
+  memory_gb: 2
+  disk_size_gb: 10
+
+# Scaling configuration
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 10
+  cool_down_period_sec: 60
+  cpu_utilization:
+    target_utilization: 0.6
+
+# Health checks
+liveness_check:
+  path: "/"
+  check_interval_sec: 30
+  timeout_sec: 10
+  failure_threshold: 3
+  success_threshold: 1
+
+readiness_check:
+  path: "/"
+  check_interval_sec: 10
+  timeout_sec: 5
+  failure_threshold: 3
+  success_threshold: 1
+  app_start_timeout_sec: 300
+
+# Environment variables (set via gcloud or console)
+env_variables:
+  GRADIO_SERVER_NAME: "0.0.0.0"
+  GRADIO_SERVER_PORT: "8080"
+
+# Note: For secrets, use Secret Manager and reference in code
