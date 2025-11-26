@@ -9,7 +9,7 @@ These instructions will guide you through configuring a GitHub Codespaces enviro
 **1. Change your codespace's default timeout from 30 minutes to longer (60 suggested).**
 To do this, when logged in to GitHub, go to https://github.com/settings/codespaces and scroll down on that page until you see the *Default idle timeout* section. Adjust the value as desired.
 
-![Changing codespace idle timeout value](./images/aia-0-1.png?raw=true "Changing codespace idle timeout value")
+![Changing codespace idle timeout value](./images/aia-3-23.png?raw=true "Changing codespace idle timeout value")
 
 **2. Click on the button below to start a new codespace from this repository.**
 
@@ -19,17 +19,17 @@ Click here ➡️  [![Open in GitHub Codespaces](https://github.com/codespaces/b
 
 **3. Then click on the option to create a new codespace.**
 
-![Creating new codespace from button](./images/aia-2-29.png?raw=true "Creating new codespace from button")
+![Creating new codespace from button](./images/aia-3-24.png?raw=true "Creating new codespace from button")
 
 This will run for a long time while it gets everything ready.
 
 After the initial startup, it will run a script to setup the python environment and install needed python pieces. This will take several more minutes to run. It will look like this while this is running.
 
-![Final prep](./images/aia-0-5.png?raw=true "Final prep")
+![Final prep](./images/aia-3-25.png?raw=true "Final prep")
 
 The codespace is ready to use when you see output like the one shown below in its terminal.
 
-![Ready to use](./images/aia-2-36.png?raw=true "Ready to use")
+![Ready to use](./images/aia-3-26.png?raw=true "Ready to use")
 
 <br><br>
 
