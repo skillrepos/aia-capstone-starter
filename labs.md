@@ -1,6 +1,6 @@
 # Capstone Project: Building a Customer Support Chatbot
 ## Enterprise AI Accelerator Workshop - Day 2 Capstone
-## Revision 1.0 - 11/25/25
+## Revision 1.1 - 11/26/25
 
 **Prerequisites:**
 - Completed Labs 1-5 in the main workshop (MCP fundamentals, classification server, RAG agent)
@@ -162,6 +162,140 @@ Alternatively, you can get to the running app, by switching to the *PORTS* tab (
 ![RAG response](./images/aia-3-31.png?raw=true "RAG response")
 
 
+**Lab 2 - Adding a Web Interface**
+
+**Purpose: Add a Gradio interface onto the system.**
+
+
+  1. Overview & Documentation (Lines 1-78)
+
+  Header documentation explaining what MCP (Model Context Protocol) is, the server's purpose, architecture diagram, and how the client-server
+   communication works via stdio/JSON-RPC.
+
+  2. Imports (Lines 80-136)
+
+  Standard library, MCP library, ChromaDB, and pypdf imports with logging configuration.
+
+  3. Section 1: Configuration and Constants (Lines 138-186)
+
+  File paths (KNOWLEDGE_BASE_DIR, CUSTOMER_DB_PATH, SEED_DATA_PATH), LLM configuration, and DOCUMENT_CATEGORIES mapping PDFs to support
+  categories.
+
+  4. Section 2: Canonical Query Definitions (Lines 187-332)
+
+  The CANONICAL_QUERIES dictionary defining 5 support categories (account_security, device_troubleshooting, shipping_inquiry,
+  returns_refunds, general_support), each with description, prompt template, example queries, and keyword lists for classification.
+
+  5. Section 3: MCP Server Class (Lines 334-1347)
+
+  The OmniTechSupportServer class containing:
+  - Database Setup Methods (Lines 391-536): SQLite initialization, schema creation, seeding, and helper queries
+  - Knowledge Base Setup (Lines 537-626): PDF loading and ChromaDB vector store initialization
+  - Classification Tool Handlers (Lines 627-729): classify_query, get_query_template, list_categories
+  - Knowledge Tool Handlers (Lines 731-818): search_knowledge, get_knowledge_for_query
+  - Customer Tool Handlers (Lines 820-921): lookup_customer, create_support_ticket
+  - Statistics/Ticket Handlers (Lines 923-1046): get_server_stats, get_tickets, request logging
+  - Tool Registration (Lines 1047-1212): MCP @list_tools and @call_tool decorator setup
+  - Resource Registration (Lines 1213-1347): MCP resources (config://llm, config://database, config://categories, data://tickets)
+
+  6. Section 4: Main Entry Point (Lines 1349-1407)
+
+
+rag_agent
+
+  1. Header & Imports (Lines 1-36)
+
+  Documentation header describing the full RAG agent with classification workflow, customer context integration, and Gradio support. Includes
+   imports for asyncio, MCP client, and HuggingFace InferenceClient.
+
+  2. Section 1: Configuration (Lines 38-67)
+
+  HuggingFace token/model setup (HF_TOKEN, HF_MODEL, HF_CLIENT), SUPPORT_KEYWORDS dictionary for routing queries to categories, and ANSI
+  color codes for terminal output.
+
+  3. Section 2: Helper Functions (Lines 69-110)
+
+  - is_support_query(): Determines if a query is support-related vs exploratory using keyword matching and regex patterns
+  - unwrap_mcp_result(): Extracts and parses JSON data from MCP result objects
+
+  4. Section 3: RAG Agent Class (Lines 113-543)
+
+  The OmniTechAgent class containing:
+  - MCP Connection (Lines 126-164): connect() starts the MCP server subprocess and establishes session; disconnect() cleans up
+  - MCP Tool Calls (Lines 165-196): call_tool() invokes MCP tools, logs calls, and handles errors
+  - Customer Context (Lines 197-218): get_customer_context() looks up customer info by email for personalization
+  - LLM Integration (Lines 219-263): query_llm() calls HuggingFace Inference API with error handling for model loading
+  - Classification Workflow (Lines 264-419): handle_support_query() implements the 4-step workflow: classify → get template → retrieve
+  knowledge → generate LLM response with optional ticket creation
+  - Direct RAG Workflow (Lines 420-518): handle_exploratory_query() handles non-support queries with simple knowledge search
+  - Main Query Handler (Lines 519-534): process_query() routes to classification or direct RAG based on is_support_query()
+  - Server Stats (Lines 535-543): get_server_stats() fetches MCP server metrics
+
+  5. Section 4: Synchronous Wrapper (Lines 545-600)
+
+  The SyncAgent class wrapping async operations for Gradio integration. Provides synchronous methods (process_query(), get_mcp_log(),
+  get_server_stats(), get_available_tools()) by running async code in a dedicated event loop.
+
+  6. Section 5: Command-Line Interface (Lines 602-686)
+
+  The interactive_mode() async function providing a CLI for testing. Supports commands: exit, demo (run sample queries), stats, and email:xxx
+   (set customer context). Also the __main__ block that runs the interactive mode.
+
+
+gradio
+
+  1. Header & Imports (Lines 1-71)
+
+  Documentation header describing the Gradio web interface with 5 tabs (Chat, Agent Dashboard, MCP Monitor, Knowledge Search, Tickets).
+  Imports Gradio, JSON, datetime, and attempts to import SyncAgent from rag_agent.py with fallback to demo mode.
+
+  2. Section 1: Application State (Lines 73-173)
+
+  The AppState class managing centralized application state:
+  - initialize_agent(): Lazy initialization of the MCP agent
+  - process_query(): Routes queries to agent or returns demo response
+  - get_mcp_stats(): Fetches server statistics
+  - search_knowledge(): Direct knowledge base search via MCP tool
+  - get_tickets(): Retrieves tickets with optional filters
+  - Also stores conversation history, metrics (total queries, resolved, tickets), and last prompt/response for debugging
+
+  3. Section 2: Custom CSS Styles (Lines 175-295)
+
+  CUSTOM_CSS string containing:
+  - Font styling (Inter font family)
+  - Debug toggle styling
+  - Typing indicator animation (keyframes)
+  - .nav-button, .metric-card, .chat-message-user, .chat-message-agent, .tool-card class definitions
+
+  4. Section 3: Helper Functions (Lines 297-683)
+
+  Utility functions for UI operations:
+  - format_message(): Formats chat messages as styled HTML
+  - process_query_handler(): Main handler for query submission, updates chat history, metrics, and debug info
+  - generate_agent_dashboard(): Generates HTML for RAG metrics dashboard with query count, resolution rate, tickets created, and recent RAG
+  operations
+  - generate_mcp_monitor(): Generates HTML for MCP server stats, available tools list, and recent MCP call log
+  - generate_tickets_display(): Generates HTML table of support tickets with status/priority badges and filters
+  - clear_chat(): Resets conversation history and metrics
+  - get_status(): Returns system status string
+  - search_knowledge_direct(): Searches knowledge base and formats results as HTML with similarity bars
+
+  5. Section 4: Gradio Interface Definition (Lines 685-978)
+
+  The complete UI layout using gr.Blocks():
+  - Header Row: Title banner with gradient background + Developer Mode checkbox
+  - Chat Tab (always visible): Customer dropdown, chat display, message input, send button, quick action buttons
+  - Agent Dashboard Tab (Developer Mode): Performance metrics, recent RAG operations, LLM prompt/response debug textboxes
+  - MCP Monitor Tab (Developer Mode): Server metrics, available tools list, recent MCP calls
+  - Knowledge Search Tab (Developer Mode): Search input, results slider, category cards
+  - Tickets Tab (Developer Mode): Customer/status filter dropdowns, ticket list display
+  - Footer: Branding and copyright
+  - Event Handlers: Debug toggle, send button, submit, clear, quick actions, refresh buttons, tab select auto-refresh, knowledge search,
+  ticket filters
+
+  6. Section 5: Main Entry Point (Lines 980-1001)
+
+  The __main__ block that prints a startup banner and launches the Gradio demo on 0.0.0.0:7860 with sharing enabled.
 
 2. As you scroll through, you'll see the additions:
    - **Customer database** (around line 115): A dictionary with sample customers
