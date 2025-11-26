@@ -141,11 +141,12 @@ Without `HF_TOKEN`, you'll see truncated responses like:
 > "Based on our Return policies: OmniTech Solutions Consumer Returns..."
 
 **How to fix:**
-1. Go to **Settings** → **Repository secrets**
-2. Click **New secret**
-3. Name: `HF_TOKEN`
-4. Value: Your HuggingFace API token from https://huggingface.co/settings/tokens
+1. On the Hugging Face spaces site (huggingface.co/spaces/userid/aia-capstone) click on the **Settings** link in the upper right. 
+2. Scroll down until you see the **Variables and secrets** section.
+3. Click **New secret** button on right.
+4. Fill in the fields with Name: `HF_TOKEN`and Value: Your HuggingFace API token.
 5. Click **Save** and the Space will restart automatically
+6. You can watch progress back on the **App** tab.
 
 ## Features
 
