@@ -380,36 +380,54 @@ JSON Response:"""
         return final_response
 
 # ═══════════════════════════════════════════════════════════════════════════
-# TESTING (if run directly)
+# Interactive mode (when run directly)
 # ═══════════════════════════════════════════════════════════════════════════
 
-async def test_agent():
-    """Simple test to make sure everything works"""
+async def interactive_agent():
+    """Run an interactive REPL for querying the RAG agent."""
 
     agent = SyncAgent()
-    await agent.connect_mcp()
 
-    print("\n" + "="*60)
-    print("Testing RAG Agent")
-    print("="*60 + "\n")
+    try:
+        # Try to connect to the MCP server; if it fails, keep going so
+        # users can still query the knowledge base.
+        await agent.connect_mcp()
+    except Exception as e:
+        print(f"Warning: couldn't connect to MCP server: {e}")
 
-    # Test 1: Knowledge base query (from PDFs)
-    print("Q: How do I reset my password?")
-    response = await agent.query("How do I reset my password?")
-    print(f"A: {response}\n")
+    print("\nInteractive OmniTech RAG Agent")
+    print("Type 'exit' or 'quit' to stop. Press Ctrl-C to abort.")
 
-    # Test 2: Order lookup (MCP tool)
-    print("Q: What's the status of order ORD-1003?")
-    response = await agent.query("What's the status of order ORD-1003?")
-    print(f"A: {response}\n")
+    try:
+        while True:
+            try:
+                user_input = input("\nYou: ").strip()
+            except EOFError:
+                # Ctrl-D / EOF -> exit
+                break
 
-    # Test 3: Email search (MCP tool)
-    print("Q: What issues is john.smith@email.com having?")
-    response = await agent.query("What issues is john.smith@email.com having?")
-    print(f"A: {response}\n")
+            if not user_input:
+                continue
+            if user_input.lower() in ("exit", "quit"):
+                break
 
-    await agent.cleanup()
+            try:
+                response = await agent.query(user_input)
+                print(f"Agent: {response}\n")
+            except Exception as e:
+                print(f"Error processing query: {e}")
+
+    except KeyboardInterrupt:
+        print("\nInterrupted by user.")
+
+    finally:
+        try:
+            await agent.cleanup()
+        except Exception:
+            pass
+
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(test_agent())
+    asyncio.run(interactive_agent())
+
