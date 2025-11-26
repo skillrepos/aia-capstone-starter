@@ -1,0 +1,74 @@
+{
+  "emails": [
+    {
+      "id": "email_001",
+      "customer_email": "john.smith@email.com",
+      "subject": "Laptop won't turn on",
+      "body": "Hi, I bought the UltraBook Pro 15 last week and now it won't power on at all. I've tried holding the power button but nothing happens. Order #ORD-1001. Please help!",
+      "date": "2024-01-15",
+      "status": "open"
+    },
+    {
+      "id": "email_002",
+      "customer_email": "sarah.jones@email.com",
+      "subject": "Question about wireless mouse battery",
+      "body": "How long should the battery last on the ErgoMouse Wireless? Mine seems to drain very quickly (less than a week). Is this normal?",
+      "date": "2024-01-16",
+      "status": "open"
+    },
+    {
+      "id": "email_003",
+      "customer_email": "mike.chen@email.com",
+      "subject": "Shipping delay on my order",
+      "body": "I ordered a monitor (ORD-1003) 10 days ago and it still hasn't shipped. The website said 3-5 day delivery. What's going on?",
+      "date": "2024-01-17",
+      "status": "open"
+    },
+    {
+      "id": "email_004",
+      "customer_email": "john.smith@email.com",
+      "subject": "Re: Laptop won't turn on",
+      "body": "I tried the hard reset you suggested but it still doesn't work. The charging light doesn't even come on when I plug it in.",
+      "date": "2024-01-18",
+      "status": "open"
+    }
+  ],
+  "orders": [
+    {
+      "order_id": "ORD-1001",
+      "customer_email": "john.smith@email.com",
+      "product": "UltraBook Pro 15",
+      "price": "$1299.99",
+      "order_date": "2024-01-08",
+      "status": "delivered",
+      "tracking": "TRK123456789"
+    },
+    {
+      "order_id": "ORD-1002",
+      "customer_email": "sarah.jones@email.com",
+      "product": "ErgoMouse Wireless",
+      "price": "$49.99",
+      "order_date": "2024-01-10",
+      "status": "delivered",
+      "tracking": "TRK987654321"
+    },
+    {
+      "order_id": "ORD-1003",
+      "customer_email": "mike.chen@email.com",
+      "product": "UltraView 4K Monitor 27",
+      "price": "$399.99",
+      "order_date": "2024-01-07",
+      "status": "processing",
+      "tracking": "pending"
+    },
+    {
+      "order_id": "ORD-1004",
+      "customer_email": "john.smith@email.com",
+      "product": "USB-C Hub Pro",
+      "price": "$79.99",
+      "order_date": "2024-01-08",
+      "status": "delivered",
+      "tracking": "TRK123456790"
+    }
+  ]
+}
