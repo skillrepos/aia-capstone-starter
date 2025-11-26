@@ -103,8 +103,46 @@ CUSTOM_CSS = """
 
 .gradio-container {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-    background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
 }
+
+/* Debug toggle styling */
+.debug-toggle {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background: #f1f5f9;
+    border-radius: 8px;
+    font-size: 0.875rem;
+}
+
+.debug-toggle label {
+    cursor: pointer;
+}
+
+/* Typing indicator animation */
+@keyframes typing-dot {
+    0%, 60%, 100% { opacity: 0.3; }
+    30% { opacity: 1; }
+}
+
+.typing-indicator {
+    display: inline-flex;
+    gap: 4px;
+    padding: 0.75rem 1rem;
+    background: #f1f5f9;
+    border-radius: 12px;
+    margin: 0.5rem 0;
+}
+
+.typing-indicator span {
+    width: 8px;
+    height: 8px;
+    background: #64748b;
+    border-radius: 50%;
+    animation: typing-dot 1.4s infinite;
+}
+
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
 
 .nav-button {
     background: #ffffff;
@@ -370,7 +408,11 @@ def clear_chat():
     """Clear conversation history."""
     app_state.conversation_history = []
     app_state.metrics = {'total_queries': 0, 'resolved_queries': 0, 'tickets_created': 0}
-    return "", "", ""
+    initial_html = """<div style='padding: 2rem; text-align: center; color: #94a3b8;'>
+        <p style='font-size: 1.1rem;'>How can we help you today?</p>
+        <p style='font-size: 0.9rem;'>Ask about orders, products, accounts, or technical support.</p>
+    </div>"""
+    return initial_html, "", ""
 
 
 def get_status() -> str:
@@ -437,79 +479,95 @@ def search_knowledge_direct(search_query: str, max_results: int) -> str:
 
 with gr.Blocks(title="OmniTech Support") as demo:
 
-    # Header
-    gr.HTML("""
-    <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
-                padding: 2rem;
-                border-radius: 14px;
-                color: white;
-                text-align: center;
-                margin-bottom: 2rem;">
-        <h1 style="margin: 0; font-size: 2.5rem; font-weight: 700;">
-            OmniTech Customer Support
-        </h1>
-        <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">
-            AI-Powered Support • Classification RAG • MCP Protocol
-        </p>
-    </div>
-    """)
+    # Inject custom CSS
+    gr.HTML(f"<style>{CUSTOM_CSS}</style>")
 
-    # Status display
-    status_display = gr.Markdown(get_status())
-
-    # Use Tabs for navigation (Gradio 6.0 compatible)
-    with gr.Tabs():
-        # Customer Chat Tab
-        with gr.Tab("Customer Chat"):
-            gr.Markdown("## Customer Support Chat")
-
-            customer_email = gr.Dropdown(
-                label="Customer Email",
-                choices=["john.doe@email.com", "sarah.smith@email.com", "mike.johnson@email.com", "guest@example.com"],
-                value="john.doe@email.com"
+    # Header with debug toggle
+    with gr.Row():
+        with gr.Column(scale=20):
+            gr.HTML("""
+            <div style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
+                        padding: 1.5rem 2rem;
+                        border-radius: 14px;
+                        color: white;
+                        margin-bottom: 1rem;">
+                <h1 style="margin: 0; font-size: 2rem; font-weight: 700;">
+                    OmniTech Customer Support
+                </h1>
+                <p style="margin: 0.25rem 0 0 0; opacity: 0.9; font-size: 0.95rem;">
+                    AI-Powered Support Assistant
+                </p>
+            </div>
+            """)
+        with gr.Column(scale=1, min_width=180):
+            debug_mode = gr.Checkbox(
+                label="Developer Mode",
+                value=False
             )
 
+    # Status display (only visible in debug mode)
+    status_display = gr.Markdown(get_status(), visible=False)
+
+    # Use Tabs for navigation (Gradio 6.0 compatible)
+    with gr.Tabs() as tabs:
+        # Customer Chat Tab
+        with gr.Tab("Chat", id="chat_tab"):
+            with gr.Row():
+                with gr.Column(scale=4):
+                    customer_email = gr.Dropdown(
+                        label="Customer",
+                        choices=["john.doe@email.com", "sarah.smith@email.com", "mike.johnson@email.com", "guest@example.com"],
+                        value="john.doe@email.com",
+                        container=True
+                    )
+                with gr.Column(scale=1):
+                    clear_btn = gr.Button("Clear Chat", size="sm")
+
             chat_display = gr.HTML(
-                value="<div style='padding: 1rem; color: #64748b;'>Start a conversation...</div>"
+                value="""<div style='padding: 2rem; text-align: center; color: #94a3b8;'>
+                    <p style='font-size: 1.1rem;'>How can we help you today?</p>
+                    <p style='font-size: 0.9rem;'>Ask about orders, products, accounts, or technical support.</p>
+                </div>"""
             )
 
             query_input = gr.Textbox(
-                label="Your Message",
+                label="Message",
                 placeholder="Type your question here...",
-                lines=2
+                lines=2,
+                show_label=False
             )
 
             with gr.Row():
-                send_btn = gr.Button("Send", variant="primary", scale=2)
-                clear_btn = gr.Button("Clear", scale=1)
+                send_btn = gr.Button("Send Message", variant="primary", scale=3)
 
-            gr.Markdown("#### Quick Actions")
+            gr.Markdown("**Try asking about:**", elem_classes=["quick-actions-label"])
             with gr.Row():
-                q1 = gr.Button("Password Reset")
-                q2 = gr.Button("Device Issue")
-                q3 = gr.Button("Return Policy")
-                q4 = gr.Button("Track Order")
+                q1 = gr.Button("🔑 Password Reset", size="sm", variant="secondary")
+                q2 = gr.Button("🔧 Device Issue", size="sm", variant="secondary")
+                q3 = gr.Button("📦 Return Policy", size="sm", variant="secondary")
+                q4 = gr.Button("🚚 Track Order", size="sm", variant="secondary")
 
-            gr.Markdown("---")
-            gr.Markdown("### Debug Info")
-            with gr.Row():
-                with gr.Column():
-                    prompt_display = gr.Textbox(label="LLM Prompt", lines=8, interactive=False)
-                with gr.Column():
-                    response_display = gr.Textbox(label="Full Response", lines=8, interactive=False)
-
-        # Agent Dashboard Tab
-        with gr.Tab("Agent Dashboard", id="agent_tab") as agent_tab:
+        # Agent Dashboard Tab (hidden by default)
+        with gr.Tab("Agent Dashboard", id="agent_tab", visible=False) as agent_tab:
             agent_dashboard = gr.HTML(generate_agent_dashboard())
             refresh_agent_btn = gr.Button("Refresh Dashboard")
 
-        # MCP Monitor Tab
-        with gr.Tab("MCP Monitor", id="mcp_tab") as mcp_tab:
+            # Debug Info Section - LLM Prompt and Full Response
+            gr.Markdown("---")
+            gr.Markdown("### Last Query Debug Info")
+            with gr.Row():
+                with gr.Column():
+                    prompt_display = gr.Textbox(label="LLM Prompt", lines=10, interactive=False)
+                with gr.Column():
+                    response_display = gr.Textbox(label="Full Response", lines=10, interactive=False)
+
+        # MCP Monitor Tab (hidden by default)
+        with gr.Tab("MCP Monitor", id="mcp_tab", visible=False) as mcp_tab:
             mcp_monitor = gr.HTML(generate_mcp_monitor())
             refresh_mcp_btn = gr.Button("Refresh Monitor")
 
-        # Knowledge Search Tab
-        with gr.Tab("Knowledge Search"):
+        # Knowledge Search Tab (hidden by default)
+        with gr.Tab("Knowledge Search", visible=False) as kb_tab:
             gr.Markdown("## Knowledge Base Search")
             gr.Markdown("Search the OmniTech product documentation directly.")
 
@@ -560,6 +618,29 @@ with gr.Blocks(title="OmniTech Support") as demo:
                 </div>
             </div>
             """)
+
+    # Footer
+    gr.HTML("""
+    <div style="text-align: center; padding: 1rem; margin-top: 1rem; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 0.8rem;">
+        OmniTech Customer Support • Powered by Claude AI
+    </div>
+    """)
+
+    # Debug mode toggle handler
+    def toggle_debug_mode(enabled):
+        """Toggle visibility of debug elements."""
+        return (
+            gr.update(visible=enabled),  # agent_tab
+            gr.update(visible=enabled),  # mcp_tab
+            gr.update(visible=enabled),  # kb_tab
+            gr.update(visible=enabled),  # status_display
+        )
+
+    debug_mode.change(
+        toggle_debug_mode,
+        inputs=[debug_mode],
+        outputs=[agent_tab, mcp_tab, kb_tab, status_display]
+    )
 
     # Chat handlers
     send_btn.click(
