@@ -1,0 +1,52 @@
+{
+  "customers": [
+    {
+      "email": "john.doe@email.com",
+      "name": "John Doe",
+      "tier": "Premium",
+      "support_tickets": 2
+    },
+    {
+      "email": "sarah.smith@email.com",
+      "name": "Sarah Smith",
+      "tier": "Standard",
+      "support_tickets": 0
+    },
+    {
+      "email": "mike.johnson@email.com",
+      "name": "Mike Johnson",
+      "tier": "Premium",
+      "support_tickets": 1
+    }
+  ],
+  "orders": [
+    {
+      "id": "ORD-001",
+      "customer_email": "john.doe@email.com",
+      "order_date": "2024-11-15",
+      "product": "Wireless Headphones",
+      "status": "Delivered"
+    },
+    {
+      "id": "ORD-002",
+      "customer_email": "john.doe@email.com",
+      "order_date": "2024-12-01",
+      "product": "Bluetooth Speaker",
+      "status": "Shipped"
+    },
+    {
+      "id": "ORD-003",
+      "customer_email": "sarah.smith@email.com",
+      "order_date": "2024-11-20",
+      "product": "USB Cable",
+      "status": "Delivered"
+    },
+    {
+      "id": "ORD-004",
+      "customer_email": "mike.johnson@email.com",
+      "order_date": "2024-12-10",
+      "product": "Smart Watch",
+      "status": "Processing"
+    }
+  ]
+}
