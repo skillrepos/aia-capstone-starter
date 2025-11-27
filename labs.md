@@ -499,7 +499,7 @@ When done running the app, you can stop the gradio instance that's running in th
 
 **Lab 6 - Deploying to Hugging Face**
 
-**Purpose: Deploying the full app into a Hugging Face space.**
+**Purpose: Deploying the full app into a Hugging Face Space.**
 
 1. You will need the Hugging Face userid and token value that you created in the README at the beginning of the labs. Make sure you have those handy.
 
