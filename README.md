@@ -6,18 +6,13 @@ These instructions will guide you through configuring a GitHub Codespaces enviro
 
 <br><br>
 
-**1. Change your codespace's default timeout from 30 minutes to longer (60 suggested).**
-To do this, when logged in to GitHub, go to https://github.com/settings/codespaces and scroll down on that page until you see the *Default idle timeout* section. Adjust the value as desired.
-
-![Changing codespace idle timeout value](./images/aia-3-23.png?raw=true "Changing codespace idle timeout value")
-
-**2. Click on the button below to start a new codespace from this repository.**
+**1. Click on the button below to start a new codespace from this repository.**
 
 Click here ➡️  [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/skillrepos/aia-capstone-starter?quickstart=1)
 
 <br><br>
 
-**3. Then click on the option to create a new codespace. *While this is running, you can be creating your Hugging Face token in the next step!***
+**2. Then click on the option to create a new codespace. *While this is running, you can be creating your Hugging Face token in the next step!***
 
 ![Creating new codespace from button](./images/aia-3-24.png?raw=true "Creating new codespace from button")
 
@@ -33,36 +28,36 @@ The codespace is ready to use when you see output like the one shown below in it
 
 <br><br>
 
-**4. Set up your HuggingFace API token.**
+**3. Set up your HuggingFace API token.**
 
 The RAG agent uses HuggingFace's Inference API to generate LLM responses. You'll need a free API token:
 
-1. Go to (https://huggingface.co)[https://huggingface.co] and log in if you already have an account. If you need to create an account, click the *Sign Up* button or visit (https://huggingface.co/join)[https://huggingface.co/join]
+A. Go to (https://huggingface.co)[https://huggingface.co] and log in if you already have an account. If you need to create an account, click the *Sign Up* button or visit (https://huggingface.co/join)[https://huggingface.co/join]
 
 ![HF login](./images/aia-3-19.png?raw=true "HF login")
 
 <br>
    
-2. Navigate to (https://huggingface.co/settings/tokens)[https://huggingface.co/settings/tokens].  Click on *+ Create new token*.
+B. Navigate to (https://huggingface.co/settings/tokens)[https://huggingface.co/settings/tokens].  Click on *+ Create new token*.
 
 ![Get token](./images/aia-3-20.png?raw=true "Get token")
 
 
-3. Select **Read** for the token type and provide a name.
+C. Select **Read** for the token type and provide a name.
 
 ![Read token](./images/aia-3-21.png?raw=true "Read token")
    
-6. Click on the *Create token* button and copy the token (it starts with `hf_`). Save it somewhere.
+D. Click on the *Create token* button and copy the token (it starts with `hf_`). Save it somewhere.
 
 ![Save/copy token](./images/aia-3-22.png?raw=true "Save/copy token")
 
-7. For all runs of agents in the labs, make sure the token is set in your terminal before running the agent:
+E. For all runs of agents in the labs, make sure the token is set in your terminal before running the agent:
 
 ```bash
 export HF_TOKEN="hf_your_token_here"
 ```
 
-8. Alternatively, to make this permanent for your codespace session, add it to your shell profile:
+F. Alternatively, to make this permanent for your codespace session, add it to your shell profile:
 
 ```bash
 echo 'export HF_TOKEN="hf_your_token_here"' >> ~/.bashrc
@@ -71,7 +66,7 @@ source ~/.bashrc
 
 <br><br>
 
-**5. Open the labs file.**
+**4. Open the labs file.**
 
 You can open the [labs.md](./labs.md) file either in your codespace or in a separate browswer tab/instance.**
 
