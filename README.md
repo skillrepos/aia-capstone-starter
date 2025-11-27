@@ -42,20 +42,27 @@ B. Navigate to (https://huggingface.co/settings/tokens)[https://huggingface.co/s
 
 ![Get token](./images/aia-3-20.png?raw=true "Get token")
 
+<br>
 
 C. Select **Read** for the token type and provide a name.
 
 ![Read token](./images/aia-3-21.png?raw=true "Read token")
+
+<br>
    
 D. Click on the *Create token* button and copy the token (it starts with `hf_`). Save it somewhere.
 
 ![Save/copy token](./images/aia-3-22.png?raw=true "Save/copy token")
+
+<br>
 
 E. For all runs of agents in the labs, make sure the token is set in your terminal before running the agent:
 
 ```bash
 export HF_TOKEN="hf_your_token_here"
 ```
+
+<br>
 
 F. Alternatively, to make this permanent for your codespace session, add it to your shell profile:
 
