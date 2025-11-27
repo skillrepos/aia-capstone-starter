@@ -496,6 +496,97 @@ When done running the app, you can stop the gradio instance that's running in th
 </p>
 </br></br>
 
+
+**Lab 6 - Deploying to Hugging Face**
+
+**Purpose: Deploying the full app into a Hugging Face space.**
+
+1. You will need the Hugging Face userid and token value that you created in the README at the beginning of the labs. Make sure you have those handy.
+
+<br><br>
+
+2. Make sure you are logged into huggingface.co. Go to [https://huggingface.co/spaces](https://huggingface.co/spaces) and click on the *New Space* button on the right.
+
+![New space](./images/aia-3-48.png?raw=true "New space")
+
+<br><br>
+
+3. On the form for the new Space, provide a name, optionally a description and license. Make sure Gradio is selected as the *Space SDK*. You can just accept the rest of the defaults on that page. Scroll to the bottom and click to save the Space.
+
+![New space](./images/aia-3-50.png?raw=true "New space")
+
+<br><br>
+
+4. While you are on that space, we need to setup a secret with our HF token. Click on the *Settings* link on the top right.
+
+![Settings](./images/aia-3-51.png?raw=true "Settings")
+
+<br><br>
+
+
+5. On the Settings page, scroll down until you find the *Variables and secrets* section. Then click on *New secret*.
+
+![Settings](./images/aia-3-52.png?raw=true "Settings")
+
+<br><br>
+
+6. In the dialog, provide the name, description, and your actual token value, then click *Save*.
+
+
+![Secret values](./images/aia-3-9.png?raw=true "Secret values")
+
+
+<br><br>
+
+7. Now, in the root of the project in a terminal in the codespace, run the following commands to get setup to update the space. Replace HF_USERID with your actual Hugging Face userid.
+
+```
+git clone https://huggingface.co/spaces/*HF_USERID*/capstone
+cd capstone
+```
+
+<br><br>
+
+8. We have a script to get files setup for Hugging Face deployment. Run the script from this directory as follows:
+
+```
+../scripts/prepare_hf_spaces.sh .
+```
+
+This should copy necessary files over that are needed for the deployment. It also sets up a README file with some needed values.
+
+<br><br>
+
+9. Now, you can do the usual Git commands to get your files into the new space.
+
+```
+git add .
+git commit -m "initial commit"
+git push
+```
+
+<br><br>
+
+10. When you run that last command, VS Code/the codespace will prompt you at the *top* of the screen for your Hugging Face username. Enter your username there and hit *Enter*.
+
+![Enter HF username](./images/aia-3-53.png?raw=true "Enter HF username")
+
+<br><br>
+
+11. You will then be prompted for your password. **This is your Hugging Face token value.** Just copy and paste the token value into the box.
+
+![Enter HF token](./images/aia-3-54.png?raw=true "Enter HF token")
+
+<br><br>
+
+12. Switch back to your Space on Hugging Face and click on the *App* link at the top. You should see that your app is in the process of building.
+
+![App building](./images/aia-3-55.png?raw=true "App building")
+
+<br><br>
+
+
+
 <p align="center">
 <b>[END OF LAB]</b>
 </p>
