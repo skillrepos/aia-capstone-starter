@@ -465,10 +465,26 @@ def generate_mcp_monitor() -> str:
         </div>
         """
 
+        # Recent MCP calls (shown first)
+        if app_state.agent:
+            mcp_log = app_state.agent.get_mcp_log()
+            if mcp_log:
+                html += "<h3>Recent MCP Calls</h3>"
+                for entry in mcp_log[-10:]:
+                    html += f"""
+                    <div class="metric-card">
+                        <strong>{entry['tool']}</strong>
+                        <span style="float: right; color: #64748b;">{entry['duration_ms']}ms</span>
+                        <p style="color: #64748b; font-size: 0.875rem;">
+                            {entry['timestamp']} - {'✓' if entry['success'] else '✗'}
+                        </p>
+                    </div>
+                    """
+
         # Available tools
         tools = stats.get('tools_available', [])
         if tools:
-            html += "<h3>Available MCP Tools</h3><div class='metric-card'>"
+            html += "<h3 style='margin-top: 2rem;'>Available MCP Tools</h3><div class='metric-card'>"
             tool_descriptions = {
                 'classify_query': 'Classify customer queries into support categories',
                 'get_query_template': 'Get prompt templates for categories',
@@ -490,22 +506,6 @@ def generate_mcp_monitor() -> str:
             html += "</div>"
     else:
         html += "<p style='color: #64748b;'>Server statistics not available. Initialize the agent first.</p>"
-
-    # Recent MCP calls
-    if app_state.agent:
-        mcp_log = app_state.agent.get_mcp_log()
-        if mcp_log:
-            html += "<h3 style='margin-top: 2rem;'>Recent MCP Calls</h3>"
-            for entry in mcp_log[-10:]:
-                html += f"""
-                <div class="metric-card">
-                    <strong>{entry['tool']}</strong>
-                    <span style="float: right; color: #64748b;">{entry['duration_ms']}ms</span>
-                    <p style="color: #64748b; font-size: 0.875rem;">
-                        {entry['timestamp']} - {'✓' if entry['success'] else '✗'}
-                    </p>
-                </div>
-                """
 
     return html
 
