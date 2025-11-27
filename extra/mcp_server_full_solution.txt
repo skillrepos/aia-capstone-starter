@@ -772,7 +772,7 @@ class OmniTechSupportServer:
                     "category": meta.get("category", "unknown"),
                     "source": meta.get("source", "Unknown"),
                     "distance": dist,
-                    "similarity": round(1 - dist, 3) if dist < 1 else 0
+                    "similarity": round(1 / (1 + dist), 3)
                 })
 
         result = {
