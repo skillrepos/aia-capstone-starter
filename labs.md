@@ -1,6 +1,6 @@
 # Capstone Project: Building a Customer Support Chatbot
-## Enterprise AI Accelerator Workshop - Day 2 Capstone
-## Revision 1.1 - 11/26/25
+## Enterprise AI Accelerator Workshop - Day 3 Capstone
+## Revision 1.2 - 11/26/25
 
 **Prerequisites:**
 - Completed Labs 1-5 in the main workshop (MCP fundamentals, classification server, RAG agent)
@@ -106,7 +106,7 @@ When done, type `exit` to quit.
 </p>
 </br></br>
 
----
+
 
 **Lab 2 - Adding a Web Interface**
 
@@ -162,104 +162,232 @@ Alternatively, you can get to the running app, by switching to the *PORTS* tab (
 ![RAG response](./images/aia-3-31.png?raw=true "RAG response")
 
 
-**Lab 2 - Adding a Web Interface**
+<p align="center">
+<b>[END OF LAB]</b>
+</p>
+</br></br>
 
-**Purpose: Add a Gradio interface onto the system.**
+
+**Lab 3 - The Full MCP Server**
+
+**Purpose: Building out the full MCP server for the enhanced app.**
 
 
-  1. Overview & Documentation (Lines 1-78)
+1. In this lab, we'll use the usual compare and merge process to build out the full version of the MCP Server with the following features:
+
+- Query classification into 5+ support categories (extensible via Lab 6)
+- Category-specific prompt templates
+- RAG-based knowledge retrieval
+- Customer database lookup
+- Support ticket creation
+- Server statistics
+
+<br><br>
+
+2. Start the process by running the command below.
+
+```
+code -d extra/mcp_server_full_solution.txt mcp_server.py
+```
+
+<br>
+
+![Updating full server](./images/aia-3-32.png?raw=true "Updating full server")
+
+<br><br>
+
+3. This is a large file with a lot of pieces. Just proceed through and observe and merge, being careful to merge all the changes. The information is just fyi if you're interested in what is implemented where in the code.
+
+  A. **Overview & Documentation** (Lines 1-78)
 
   Header documentation explaining what MCP (Model Context Protocol) is, the server's purpose, architecture diagram, and how the client-server
    communication works via stdio/JSON-RPC.
 
-  2. Imports (Lines 80-136)
+  
+  B. **Imports** (Lines 80-136)
 
   Standard library, MCP library, ChromaDB, and pypdf imports with logging configuration.
 
-  3. Section 1: Configuration and Constants (Lines 138-186)
+  
+  C. **Section 1: Configuration and Constants** (Lines 138-186)
 
   File paths (KNOWLEDGE_BASE_DIR, CUSTOMER_DB_PATH, SEED_DATA_PATH), LLM configuration, and DOCUMENT_CATEGORIES mapping PDFs to support
   categories.
 
-  4. Section 2: Canonical Query Definitions (Lines 187-332)
+  D. **Section 2: Canonical Query Definitions** (Lines 187-332)
 
   The CANONICAL_QUERIES dictionary defining 5 support categories (account_security, device_troubleshooting, shipping_inquiry,
   returns_refunds, general_support), each with description, prompt template, example queries, and keyword lists for classification.
 
-  5. Section 3: MCP Server Class (Lines 334-1347)
+  E. **Section 3: MCP Server Class** (Lines 334-1347)
 
   The OmniTechSupportServer class containing:
-  - Database Setup Methods (Lines 391-536): SQLite initialization, schema creation, seeding, and helper queries
-  - Knowledge Base Setup (Lines 537-626): PDF loading and ChromaDB vector store initialization
-  - Classification Tool Handlers (Lines 627-729): classify_query, get_query_template, list_categories
-  - Knowledge Tool Handlers (Lines 731-818): search_knowledge, get_knowledge_for_query
-  - Customer Tool Handlers (Lines 820-921): lookup_customer, create_support_ticket
-  - Statistics/Ticket Handlers (Lines 923-1046): get_server_stats, get_tickets, request logging
-  - Tool Registration (Lines 1047-1212): MCP @list_tools and @call_tool decorator setup
-  - Resource Registration (Lines 1213-1347): MCP resources (config://llm, config://database, config://categories, data://tickets)
+  - `Database Setup Methods` (Lines 391-536): SQLite initialization, schema creation, seeding, and helper queries
+  - `Knowledge Base Setup` (Lines 537-626): PDF loading and ChromaDB vector store initialization
+  - `Classification Tool Handlers` (Lines 627-729): classify_query, get_query_template, list_categories
+  - `Knowledge Tool Handlers` (Lines 731-818): search_knowledge, get_knowledge_for_query
+  - `Customer Tool Handlers` (Lines 820-921): lookup_customer, create_support_ticket
+  - `Statistics/Ticket Handlers` (Lines 923-1046): get_server_stats, get_tickets, request logging
+  - `Tool Registration` (Lines 1047-1212): MCP @list_tools and @call_tool decorator setup
+  - `Resource Registration` (Lines 1213-1347): MCP resources (config://llm, config://database, config://categories, data://tickets)
 
-  6. Section 4: Main Entry Point (Lines 1349-1407)
+  F. **Section 4: Main Entry Point** (Lines 1349-1407)
+
+<br><br>
+
+4. Once you've merged the code, you can close the diff tab as usual.
+
+<br><br>
+
+5. When done, you can verify the syntax is valid with the command below:
+
+```
+python -c "import mcp_server; print('MCP server OK')"
+```
+
+![Verifying syntax](./images/aia-3-33.png?raw=true "Verifying syntax")
+
+<p align="center">
+<b>[END OF LAB]</b>
+</p>
+</br></br>
+
+**Lab 4 - The Full RAG Agent**
+
+**Purpose: Building out the full RAG agent for the enhanced app.**
 
 
-rag_agent
+1. In this lab, we'll use the usual compare and merge process to build out the full version of the RAG agent with the following features:
 
-  1. Header & Imports (Lines 1-36)
+- Intelligent query routing (support vs. exploratory)
+- 4-step classification workflow
+- Customer context integration
+- HuggingFace API integration
+- Synchronous wrapper for Gradio
+  
+<br><br>
+
+
+2. Start the process by running the command below.
+   
+```
+code -d extra/mcp_server_full_solution.txt mcp_server.py
+```
+
+<br>
+
+![Updating full agent](./images/aia-3-34.png?raw=true "Updating full agent")
+
+<br><br>
+
+3. This is a large file with a lot of pieces. Just proceed through and observe and merge, being careful to merge all the changes. The information is just fyi if you're interested in what is implemented where in the code.
+
+
+  A. **Header & Imports** (Lines 1-36)
 
   Documentation header describing the full RAG agent with classification workflow, customer context integration, and Gradio support. Includes
    imports for asyncio, MCP client, and HuggingFace InferenceClient.
 
-  2. Section 1: Configuration (Lines 38-67)
+  B. **Section 1: Configuration** (Lines 38-67)
 
   HuggingFace token/model setup (HF_TOKEN, HF_MODEL, HF_CLIENT), SUPPORT_KEYWORDS dictionary for routing queries to categories, and ANSI
   color codes for terminal output.
 
-  3. Section 2: Helper Functions (Lines 69-110)
+  C. **Section 2: Helper Functions** (Lines 69-110)
 
   - is_support_query(): Determines if a query is support-related vs exploratory using keyword matching and regex patterns
   - unwrap_mcp_result(): Extracts and parses JSON data from MCP result objects
 
-  4. Section 3: RAG Agent Class (Lines 113-543)
+  D. **Section 3: RAG Agent Class** (Lines 113-543)
 
   The OmniTechAgent class containing:
-  - MCP Connection (Lines 126-164): connect() starts the MCP server subprocess and establishes session; disconnect() cleans up
-  - MCP Tool Calls (Lines 165-196): call_tool() invokes MCP tools, logs calls, and handles errors
-  - Customer Context (Lines 197-218): get_customer_context() looks up customer info by email for personalization
-  - LLM Integration (Lines 219-263): query_llm() calls HuggingFace Inference API with error handling for model loading
-  - Classification Workflow (Lines 264-419): handle_support_query() implements the 4-step workflow: classify → get template → retrieve
+  - `MCP Connection` (Lines 126-164): connect() starts the MCP server subprocess and establishes session; disconnect() cleans up
+  - `MCP Tool Calls` (Lines 165-196): call_tool() invokes MCP tools, logs calls, and handles errors
+  - `Customer Context` (Lines 197-218): get_customer_context() looks up customer info by email for personalization
+  - `LLM Integration` (Lines 219-263): query_llm() calls HuggingFace Inference API with error handling for model loading
+  - `Classification Workflow` (Lines 264-419): handle_support_query() implements the 4-step workflow: classify → get template → retrieve
   knowledge → generate LLM response with optional ticket creation
-  - Direct RAG Workflow (Lines 420-518): handle_exploratory_query() handles non-support queries with simple knowledge search
-  - Main Query Handler (Lines 519-534): process_query() routes to classification or direct RAG based on is_support_query()
-  - Server Stats (Lines 535-543): get_server_stats() fetches MCP server metrics
+  - `Direct RAG Workflow` (Lines 420-518): handle_exploratory_query() handles non-support queries with simple knowledge search
+  - `Main Query Handler` (Lines 519-534): process_query() routes to classification or direct RAG based on is_support_query()
+  - `Server Stats` (Lines 535-543): get_server_stats() fetches MCP server metrics
 
-  5. Section 4: Synchronous Wrapper (Lines 545-600)
+  E. **Section 4: Synchronous Wrapper** (Lines 545-600)
 
   The SyncAgent class wrapping async operations for Gradio integration. Provides synchronous methods (process_query(), get_mcp_log(),
   get_server_stats(), get_available_tools()) by running async code in a dedicated event loop.
 
-  6. Section 5: Command-Line Interface (Lines 602-686)
+  F. **Section 5: Command-Line Interface** (Lines 602-686)
 
   The interactive_mode() async function providing a CLI for testing. Supports commands: exit, demo (run sample queries), stats, and email:xxx
    (set customer context). Also the __main__ block that runs the interactive mode.
 
 
-gradio
+4. Once you've merged the code, you can close the diff tab as usual.
 
-  1. Header & Imports (Lines 1-71)
+<br><br>
+
+5. When done, you can verify the syntax is valid with the command below:
+
+```
+python -c "import rag_agent; print('RAG agent OK')"
+```
+
+![Verifying syntax](./images/aia-3-33.png?raw=true "Verifying syntax")
+
+<p align="center">
+<b>[END OF LAB]</b>
+</p>
+</br></br>
+
+
+**Lab 5 - The Full Gradio Interface**
+
+**Purpose: Building out the full Gradio interface for the enhanced app.**
+
+
+1. In this lab, we'll use the usual compare and merge process to build out the full version of the Gradio interface with the following features:
+
+- Customer chat view with email selection
+- Debug toggle to see additional functionality
+- Agent dashboard with RAG analytics
+- MCP protocol monitor
+- Knowledge base search view
+- Ticket list
+- Quick action buttons
+  
+<br><br>
+
+
+2. Start the process by running the command below.
+   
+```
+code -d extra/gradio_app_solution.txt gradio_app.py
+```
+
+<br><br>
+
+3. This is a large file with a lot of pieces. Just proceed through and observe and merge, being careful to merge all the changes. The information is just fyi if you're interested in what is implemented where in the code.
+
+![Updating full interface](./images/aia-3-35.png?raw=true "Updating full interface")
+
+<br><br>
+
+  A. **Header & Imports** (Lines 1-71)
 
   Documentation header describing the Gradio web interface with 5 tabs (Chat, Agent Dashboard, MCP Monitor, Knowledge Search, Tickets).
   Imports Gradio, JSON, datetime, and attempts to import SyncAgent from rag_agent.py with fallback to demo mode.
 
-  2. Section 1: Application State (Lines 73-173)
+  B. **Section 1: Application State** (Lines 73-173)
 
   The AppState class managing centralized application state:
-  - initialize_agent(): Lazy initialization of the MCP agent
-  - process_query(): Routes queries to agent or returns demo response
-  - get_mcp_stats(): Fetches server statistics
-  - search_knowledge(): Direct knowledge base search via MCP tool
-  - get_tickets(): Retrieves tickets with optional filters
+  - `initialize_agent()`: Lazy initialization of the MCP agent
+  - `process_query()`: Routes queries to agent or returns demo response
+  - `get_mcp_stats()`: Fetches server statistics
+  - `search_knowledge()`: Direct knowledge base search via MCP tool
+  - `get_tickets()`: Retrieves tickets with optional filters
   - Also stores conversation history, metrics (total queries, resolved, tickets), and last prompt/response for debugging
 
-  3. Section 2: Custom CSS Styles (Lines 175-295)
+  3. **Section 2: Custom CSS Styles** (Lines 175-295)
 
   CUSTOM_CSS string containing:
   - Font styling (Inter font family)
@@ -267,20 +395,20 @@ gradio
   - Typing indicator animation (keyframes)
   - .nav-button, .metric-card, .chat-message-user, .chat-message-agent, .tool-card class definitions
 
-  4. Section 3: Helper Functions (Lines 297-683)
+  4. **Section 3: Helper Functions** (Lines 297-683)
 
   Utility functions for UI operations:
-  - format_message(): Formats chat messages as styled HTML
-  - process_query_handler(): Main handler for query submission, updates chat history, metrics, and debug info
-  - generate_agent_dashboard(): Generates HTML for RAG metrics dashboard with query count, resolution rate, tickets created, and recent RAG
+  - `format_message()`: Formats chat messages as styled HTML
+  - `process_query_handler()`: Main handler for query submission, updates chat history, metrics, and debug info
+  - `generate_agent_dashboard()`: Generates HTML for RAG metrics dashboard with query count, resolution rate, tickets created, and recent RAG
   operations
-  - generate_mcp_monitor(): Generates HTML for MCP server stats, available tools list, and recent MCP call log
-  - generate_tickets_display(): Generates HTML table of support tickets with status/priority badges and filters
-  - clear_chat(): Resets conversation history and metrics
-  - get_status(): Returns system status string
-  - search_knowledge_direct(): Searches knowledge base and formats results as HTML with similarity bars
+  - `generate_mcp_monitor()`: Generates HTML for MCP server stats, available tools list, and recent MCP call log
+  - `generate_tickets_display()`: Generates HTML table of support tickets with status/priority badges and filters
+  - `clear_chat()`: Resets conversation history and metrics
+  - `get_status()`: Returns system status string
+  - `search_knowledge_direct()`: Searches knowledge base and formats results as HTML with similarity bars
 
-  5. Section 4: Gradio Interface Definition (Lines 685-978)
+  5. **Section 4: Gradio Interface Definition** (Lines 685-978)
 
   The complete UI layout using gr.Blocks():
   - Header Row: Title banner with gradient background + Developer Mode checkbox
@@ -293,7 +421,32 @@ gradio
   - Event Handlers: Debug toggle, send button, submit, clear, quick actions, refresh buttons, tab select auto-refresh, knowledge search,
   ticket filters
 
-  6. Section 5: Main Entry Point (Lines 980-1001)
+  6. **Section 5: Main Entry Point** (Lines 980-1001)
+
+<br><br>
+
+4. Once you've merged the code, you can close the diff tab as usual.
+
+<br><br>
+
+5. When done, you can run the full application to see it in action! You should see a pop-up with a button to click to open the webpage. Click on that. If it starts another version of the codespace, just close that, kill the running python process and run again. The second time it should startup.
+
+```
+python gradio_app
+```
+
+![Running full app](./images/aia-3-36.png?raw=true "Running full app")
+
+<p align="center">
+<b>[END OF LAB]</b>
+</p>
+</br></br>
+
+<p align="center">
+<b>[END OF LAB]</b>
+</p>
+</br></br>
+
 
   The __main__ block that prints a startup banner and launches the Gradio demo on 0.0.0.0:7860 with sharing enabled.
 
