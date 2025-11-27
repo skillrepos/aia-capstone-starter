@@ -49,7 +49,12 @@ echo ""
 # Create output directory
 if [ -d "$OUTPUT_DIR" ]; then
     echo -e "${YELLOW}Warning: Output directory exists. Cleaning...${NC}"
-    rm -rf "$OUTPUT_DIR"
+    # Handle "." specially - clean contents instead of removing directory
+    if [ "$OUTPUT_DIR" = "." ] || [ "$OUTPUT_DIR" = "./" ]; then
+        rm -rf ./*.py ./*.json ./*.md ./*.txt ./.env* ./.gitignore ./knowledge_base_pdfs 2>/dev/null || true
+    else
+        rm -rf "$OUTPUT_DIR"
+    fi
 fi
 
 mkdir -p "$OUTPUT_DIR"
