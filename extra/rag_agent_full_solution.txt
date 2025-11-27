@@ -335,7 +335,7 @@ IMPORTANT: Answer the customer's EXACT question. If they mention a specific prod
 
 Respond with JSON containing:
 - "response": your answer (2-3 sentences)
-- "action_needed": "none", "create_ticket", or "escalate"
+- "action_needed": "none", "create_ticket", or "escalate" (use "create_ticket" for device issues, account problems, or complaints)
 - "confidence": 0-1
 
 JSON Response:"""
@@ -683,3 +683,4 @@ async def interactive_mode():
 
 if __name__ == "__main__":
     asyncio.run(interactive_mode())
+
