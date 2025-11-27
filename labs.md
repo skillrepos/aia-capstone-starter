@@ -22,7 +22,7 @@ In this capstone project, you will build a complete customer support chatbot wit
 
 ---
 
-**Lab 1 - Setting Up and Testing a Minimal Version**
+**Lab 1 - Setting Up and Testing a Minimum Viable Product**
 
 **Purpose: Verify the starter MCP server and RAG agent work correctly before adding enhancements.**
 
