@@ -1,6 +1,6 @@
 # Capstone Project: Building a Customer Support Chatbot
 ## Enterprise AI Accelerator Workshop - Day 3 Capstone
-## Revision 1.3 - 11/26/25
+## Revision 1.4 - 11/27/25
 
 **Prerequisites:**
 - Completed Labs 1-5 in the main workshop (MCP fundamentals, classification server, RAG agent)
@@ -175,7 +175,7 @@ Alternatively, you can get to the running app, by switching to the *PORTS* tab (
 
 1. In this lab, we'll use the usual compare and merge process to build out the full version of the MCP Server with the following features:
 
-- Query classification into 5+ support categories (extensible via Lab 6)
+- Query classification into 5+ support categories 
 - Category-specific prompt templates
 - RAG-based knowledge retrieval
 - Customer database lookup
