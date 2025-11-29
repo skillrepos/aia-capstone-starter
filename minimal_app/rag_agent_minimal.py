@@ -47,6 +47,50 @@ if not HF_TOKEN:
 KNOWLEDGE_BASE_DIR = Path(__file__).parent.parent / "knowledge_base_pdfs"
 
 # ═══════════════════════════════════════════════════════════════════════════
+# CLASSIFICATION KEYWORDS (for determining query category)
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Keywords that indicate specific support categories
+CATEGORY_KEYWORDS = {
+    "account_security": [
+        "password", "reset", "login", "account", "locked", "security",
+        "authentication", "sign in", "signin", "log in", "2fa", "two-factor"
+    ],
+    "device_troubleshooting": [
+        "won't turn on", "not working", "broken", "device", "repair",
+        "troubleshoot", "fix", "error", "crash", "frozen", "battery",
+        "charging", "screen", "power", "restart", "reboot"
+    ],
+    "shipping_inquiry": [
+        "shipping", "delivery", "tracking", "ship", "arrive", "eta",
+        "where is my", "transit", "carrier"
+    ],
+    "returns_refunds": [
+        "return", "refund", "exchange", "money back", "warranty",
+        "replacement", "defective"
+    ]
+}
+
+def classify_query(query: str) -> tuple[str, str]:
+    """
+    Classify a query into a category based on keywords.
+
+    Returns:
+        Tuple of (workflow_type, category_name)
+        workflow_type: "classification" or "direct_rag"
+        category_name: The detected category or "general_inquiry"
+    """
+    query_lower = query.lower()
+
+    for category, keywords in CATEGORY_KEYWORDS.items():
+        for keyword in keywords:
+            if keyword in query_lower:
+                return ("classification", category)
+
+    # No specific category matched - use direct RAG
+    return ("direct_rag", "general_inquiry")
+
+# ═══════════════════════════════════════════════════════════════════════════
 # AGENT CLASS
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -58,8 +102,13 @@ class SyncAgent:
     3. Generates helpful responses using Hugging Face LLMs
     """
 
-    def __init__(self):
-        """Initialize the agent with vector store and LLM"""
+    def __init__(self, verbose: bool = False):
+        """Initialize the agent with vector store and LLM
+
+        Args:
+            verbose: If True, print detailed workflow information (for CLI mode)
+        """
+        self.verbose = verbose
 
         # Initialize vector store
         self._setup_vector_store()
@@ -225,8 +274,6 @@ class SyncAgent:
             })
 
         try:
-            print("  → Calling Hugging Face LLM...")
-
             # Use chat_completion for instruct models
             response = HF_CLIENT.chat_completion(
                 messages=[{"role": "user", "content": prompt}],
@@ -237,12 +284,10 @@ class SyncAgent:
 
             # Extract the response text
             result_text = response.choices[0].message.content
-            print(f"  ✓ LLM response received ({len(result_text)} chars)")
             return result_text
 
         except Exception as e:
             error_msg = str(e)
-            print(f"  ✗ LLM error: {error_msg}")
 
             # Check for model loading (503)
             if "503" in error_msg or "loading" in error_msg.lower():
@@ -264,19 +309,40 @@ class SyncAgent:
         Main query function - this is where the magic happens!
 
         Process:
-        1. Search knowledge base for relevant info
-        2. Check if we need to search emails/orders
-        3. Send everything to HF LLM to generate response
+        1. Classify the query to determine workflow
+        2. Search knowledge base for relevant info
+        3. Check if we need to search emails/orders
+        4. Send everything to HF LLM to generate response
         """
 
-        print(f"\n{'='*60}")
-        print(f"Processing: {user_message[:50]}...")
-        print(f"{'='*60}")
+        if self.verbose:
+            print(f"\n{'='*60}")
+            print(f"Processing: {user_message[:50]}...")
+            print(f"{'='*60}")
 
-        # Step 1: Get relevant docs from knowledge base
-        print("Step 1: Searching knowledge base...")
+            # Step 0: Classify the query
+            workflow_type, category = classify_query(user_message)
+            print(f"\n[WORKFLOW DETECTION]")
+            if workflow_type == "classification":
+                print(f"  → Query Type: CLASSIFICATION WORKFLOW")
+                print(f"  → Category: {category}")
+                print(f"  → This query will use category-specific handling")
+            else:
+                print(f"  → Query Type: DIRECT RAG")
+                print(f"  → Category: {category}")
+                print(f"  → This query will use general knowledge base search")
+
+            # Step 1: Get relevant docs from knowledge base
+            print(f"\n[STEP 1: SEARCHING KNOWLEDGE BASE]")
+            print(f"  → Querying vector store for relevant documents...")
+        else:
+            # Still classify for consistency, just don't print
+            workflow_type, category = classify_query(user_message)
+
         relevant_docs = self.search_knowledge_base(user_message)
-        print(f"  ✓ Found relevant documentation")
+
+        if self.verbose:
+            print(f"  ✓ Found relevant documentation from knowledge base")
 
         # Step 2: Check if we need to search emails or orders
         additional_context = ""
@@ -284,7 +350,10 @@ class SyncAgent:
 
         # Check for email-related queries
         if any(word in query_lower for word in ["email", "conversation", "ticket", "support history"]) or "@" in user_message:
-            print("Step 2: Searching emails...")
+            if self.verbose:
+                print(f"\n[STEP 2: CHECKING MCP TOOLS - EMAILS]")
+                print(f"  → Detected email-related query")
+                print(f"  → Calling MCP tool: search_emails")
             try:
                 # Extract email address if present, or use keywords
                 email_match = re.search(r'[\w\.-]+@[\w\.-]+', user_message)
@@ -292,13 +361,18 @@ class SyncAgent:
 
                 result = await self.mcp_session.call_tool("search_emails", {"query": search_query})
                 additional_context += f"\n\nCustomer Email History:\n{result.content[0].text}\n"
-                print(f"  ✓ Found email data")
+                if self.verbose:
+                    print(f"  ✓ Retrieved email data from MCP server")
             except Exception as e:
-                print(f"  ✗ Email search failed: {e}")
+                if self.verbose:
+                    print(f"  ✗ Email search failed: {e}")
 
         # Check for order-related queries
         if any(word in query_lower for word in ["order", "shipping", "delivery", "tracking", "ord-"]):
-            print("Step 2: Searching orders...")
+            if self.verbose:
+                print(f"\n[STEP 2: CHECKING MCP TOOLS - ORDERS]")
+                print(f"  → Detected order-related query")
+                print(f"  → Calling MCP tool: search_orders")
             try:
                 # Extract order ID if present, or use keywords
                 order_match = re.search(r'ORD-\d+', user_message, re.IGNORECASE)
@@ -306,12 +380,17 @@ class SyncAgent:
 
                 result = await self.mcp_session.call_tool("search_orders", {"query": search_query})
                 additional_context += f"\n\nOrder Information:\n{result.content[0].text}\n"
-                print(f"  ✓ Found order data")
+                if self.verbose:
+                    print(f"  ✓ Retrieved order data from MCP server")
             except Exception as e:
-                print(f"  ✗ Order search failed: {e}")
+                if self.verbose:
+                    print(f"  ✗ Order search failed: {e}")
 
         # Step 3: Build prompt for LLM
-        print("Step 3: Generating response with LLM...")
+        if self.verbose:
+            print(f"\n[STEP 3: GENERATING LLM RESPONSE]")
+            print(f"  → Building augmented prompt with RAG context...")
+            print(f"  → Sending to Hugging Face LLM ({HF_MODEL})...")
 
         system_prompt = """You are a helpful OmniTech customer support agent.
 
@@ -380,8 +459,10 @@ JSON Response:"""
         # Extract just the response text
         final_response = result.get("response", "I'm sorry, I couldn't generate a proper response.")
 
-        print(f"  ✓ Response generated")
-        print(f"{'='*60}\n")
+        if self.verbose:
+            print(f"  ✓ LLM response received and parsed")
+            print(f"\n[WORKFLOW COMPLETE]")
+            print(f"{'='*60}\n")
 
         return final_response
 
@@ -392,7 +473,14 @@ JSON Response:"""
 async def interactive_agent():
     """Run an interactive REPL for querying the RAG agent."""
 
-    agent = SyncAgent()
+    print("\n" + "="*60)
+    print("OmniTech RAG Agent - Interactive Mode")
+    print("="*60)
+    print("\nInitializing agent with verbose output enabled...")
+    print("This will show the complete workflow for each query.\n")
+
+    # Create agent with verbose=True for CLI mode
+    agent = SyncAgent(verbose=True)
 
     try:
         # Try to connect to the MCP server; if it fails, keep going so
@@ -401,7 +489,12 @@ async def interactive_agent():
     except Exception as e:
         print(f"Warning: couldn't connect to MCP server: {e}")
 
-    print("\nInteractive OmniTech RAG Agent")
+    print("\n" + "-"*60)
+    print("Ready! Try these example queries:")
+    print("  • 'How do I reset my password?' (classification → account_security)")
+    print("  • 'My device won't turn on' (classification → device_troubleshooting)")
+    print("  • 'Tell me about OmniTech' (direct RAG)")
+    print("-"*60)
     print("Type 'exit' or 'quit' to stop. Press Ctrl-C to abort.")
 
     try:
@@ -436,4 +529,5 @@ async def interactive_agent():
 if __name__ == "__main__":
     import asyncio
     asyncio.run(interactive_agent())
+
 
