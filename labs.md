@@ -1,6 +1,6 @@
 # Capstone Project: Building a Customer Support Chatbot
 ## Enterprise AI Accelerator Workshop - Day 3 Capstone
-## Revision 1.5 - 11/29/25
+## Revision 1.6 - 11/29/25
 
 **Prerequisites:**
 - Completed Labs 1-5 in the main workshop (MCP fundamentals, classification server, RAG agent)
@@ -63,16 +63,17 @@ code mcp_server_minimal.py
 code rag_agent_minimal.py
 ```
 
-Scroll through and note the core parts:
+   Scroll through and note the core parts:
    - **Section 1**: CONFIGURATION - Specifies model, KB path, and checks for Hugging Face token being in place
    - **Section 2**: CLASSIFICATION KEYWORDS - Defines keyword lists for categorizing queries (account_security, device_troubleshooting, etc.) and the `classify_query()` function
    - **Section 3**: AGENT CLASS - Implements a minimal RAG agent with initialization and functions for:
       - `_load_pdf_documents()`: loading and parsing the knowledge base PDF documents
       - `_setup_vector_store()`: creating/refreshing the ChromaDB vector db
+      - `clear_history()`: clears conversation history to start a fresh conversation
       - `connect_mcp()`: connect to MCP server for working with emails and orders (fires up server via stdio)
       - `search_knowledge_base()`: search the vector db for relevant hits
       - `query_llm()`: takes the prompt (with RAG context) and queries the Hugging Face model
-      - `query()`: the workhorse - classifies the query, searches KB for relevant info, checks to see if need emails/order info, builds augmented prompt, sends it over to LLM and parses and delivers response
+      - `query()`: the workhorse - classifies the query, searches KB for relevant info, checks to see if need emails/order info, builds augmented prompt (including conversation history for follow-up context), sends it over to LLM and parses and delivers response
    - **Section 4**: Interactive mode when run directly
 
 <br><br>
