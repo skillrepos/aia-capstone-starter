@@ -65,8 +65,8 @@ SUPPORT_KEYWORDS = {
 
 # Patterns that may indicate prompt injection or goal-hijacking attempts
 SUSPICIOUS_PATTERNS = [
-    (r"ignore\s+(previous|prior|above|all)\s+(instructions?|prompts?|rules?)", "ignore_instructions"),
-    (r"disregard\s+(your|all|the)\s+(instructions?|rules?|guidelines?)", "disregard_rules"),
+    (r"ignore\s+.{0,30}(instructions?|prompts?|rules?|training)", "ignore_instructions"),
+    (r"disregard\s+.{0,30}(instructions?|rules?|guidelines?)", "disregard_rules"),
     (r"new\s+instructions?:", "new_instructions"),
     (r"you\s+are\s+now\s+a?", "role_change"),
     (r"pretend\s+(to\s+be|you'?re)", "pretend_role"),
@@ -865,5 +865,7 @@ async def interactive_mode():
 
 if __name__ == "__main__":
     asyncio.run(interactive_mode())
+
+
 
 
