@@ -358,6 +358,7 @@ diff -q rag_agent.py extra/rag_agent_full_solution.txt && python -c "import rag_
 - MCP protocol monitor
 - Knowledge base search view
 - Ticket list
+- Logged security events
 - Quick action buttons
   
 <br><br>
