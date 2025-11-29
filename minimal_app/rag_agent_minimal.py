@@ -110,12 +110,23 @@ class SyncAgent:
         """
         self.verbose = verbose
 
+        # Conversation history for multi-turn context
+        # Stores recent exchanges as list of {"user": str, "assistant": str}
+        self.conversation_history = []
+        self.max_history = 3  # Keep last 3 exchanges for context
+
         # Initialize vector store
         self._setup_vector_store()
 
         # MCP session (will be set when connecting)
         self.mcp_session = None
         self.mcp_tools = []
+
+    def clear_history(self):
+        """Clear conversation history to start fresh."""
+        self.conversation_history = []
+        if self.verbose:
+            print("[HISTORY] Conversation history cleared")
 
     def _load_pdf_documents(self):
         """Load and parse PDF documents from knowledge base directory."""
@@ -390,14 +401,25 @@ class SyncAgent:
         if self.verbose:
             print(f"\n[STEP 3: GENERATING LLM RESPONSE]")
             print(f"  → Building augmented prompt with RAG context...")
+            if self.conversation_history:
+                print(f"  → Including {len(self.conversation_history)} previous exchange(s) for context")
             print(f"  → Sending to Hugging Face LLM ({HF_MODEL})...")
+
+        # Build conversation history context
+        history_context = ""
+        if self.conversation_history:
+            history_lines = []
+            for exchange in self.conversation_history[-self.max_history:]:
+                history_lines.append(f"Customer: {exchange['user']}")
+                history_lines.append(f"Agent: {exchange['assistant']}")
+            history_context = "\n".join(history_lines)
 
         system_prompt = """You are a helpful OmniTech customer support agent.
 
 Product Documentation:
 {docs}
 {context}
-
+{history_section}
 Instructions:
 - Be friendly, helpful, and professional
 - Use the documentation to answer product questions
@@ -406,6 +428,7 @@ Instructions:
 - If you don't know something, say so clearly
 - Always provide specific, actionable help
 - IMPORTANT: When using information from the documentation, cite the source document (e.g., "According to OmniTech_Returns_Policy_2024.pdf...")
+- If there is conversation history, use it to provide continuity and reference previous exchanges when relevant
 
 Customer Question: {question}
 
@@ -416,9 +439,15 @@ Respond with JSON containing:
 
 JSON Response:"""
 
+        # Build the history section only if we have history
+        history_section = ""
+        if history_context:
+            history_section = f"\nPrevious Conversation:\n{history_context}\n"
+
         full_prompt = system_prompt.format(
             docs=relevant_docs,
             context=additional_context,
+            history_section=history_section,
             question=user_message
         )
 
@@ -459,8 +488,18 @@ JSON Response:"""
         # Extract just the response text
         final_response = result.get("response", "I'm sorry, I couldn't generate a proper response.")
 
+        # Save this exchange to conversation history
+        self.conversation_history.append({
+            "user": user_message,
+            "assistant": final_response
+        })
+        # Keep only the last max_history exchanges
+        if len(self.conversation_history) > self.max_history:
+            self.conversation_history = self.conversation_history[-self.max_history:]
+
         if self.verbose:
             print(f"  ✓ LLM response received and parsed")
+            print(f"  → Saved to conversation history ({len(self.conversation_history)}/{self.max_history} exchanges)")
             print(f"\n[WORKFLOW COMPLETE]")
             print(f"{'='*60}\n")
 
@@ -495,7 +534,8 @@ async def interactive_agent():
     print("  • 'My device won't turn on' (classification → device_troubleshooting)")
     print("  • 'Tell me about OmniTech' (direct RAG)")
     print("-"*60)
-    print("Type 'exit' or 'quit' to stop. Press Ctrl-C to abort.")
+    print("Commands: 'exit'/'quit' to stop, 'clear' to reset history")
+    print("Note: The agent remembers your last 3 exchanges for context!")
 
     try:
         while True:
@@ -509,6 +549,10 @@ async def interactive_agent():
                 continue
             if user_input.lower() in ("exit", "quit"):
                 break
+            if user_input.lower() == "clear":
+                agent.clear_history()
+                print("Conversation history cleared. Starting fresh!")
+                continue
 
             try:
                 response = await agent.query(user_input)
@@ -529,5 +573,4 @@ async def interactive_agent():
 if __name__ == "__main__":
     import asyncio
     asyncio.run(interactive_agent())
-
 
