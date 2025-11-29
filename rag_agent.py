@@ -44,6 +44,12 @@ if not HF_TOKEN:
 
 # Support detection keywords (for routing decision)
 
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║ Security: Suspicious Pattern Detection (Goal-Hijacking Prevention)       ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+# Patterns that may indicate prompt injection or goal-hijacking attempts
+
 # ANSI colors for terminal output
 BLUE = "\033[34m"
 GREEN = "\033[32m"
@@ -95,6 +101,99 @@ class OmniTechAgent:
         self.exit_stack: Optional[AsyncExitStack] = None
         self.mcp_calls_log: List[Dict] = []
         self.available_tools: List[str] = []
+
+        self.conversation_history: List[Dict[str, str]] = []
+        self.max_history = 3  # Keep last 3 exchanges
+
+        self.security_log: List[Dict] = []
+        self.max_security_log = 50  # Keep last 50 security events
+
+    def clear_history(self):
+        """Clear conversation history to start a fresh conversation."""
+        self.conversation_history = []
+        logger.info("Conversation history cleared")
+
+    # ─── Security Methods ─────────────────────────────────────────────────
+
+    def _log_security_event(self, event_type: str, severity: str, details: str,
+                            query: str = None, customer_email: str = None):
+        """
+        """
+        event = {
+            "timestamp": datetime.now().isoformat(),
+            "event_type": event_type,
+            "severity": severity,
+            "details": details,
+            "query": query[:200] if query else None,  # Truncate for safety
+            "customer_email": customer_email
+        }
+
+        # Keep log bounded
+        if len(self.security_log) > self.max_security_log:
+            self.security_log = self.security_log[-self.max_security_log:]
+
+        # Also log to standard logger for server-side visibility
+        log_msg = f"[SECURITY:{severity.upper()}] {event_type}: {details}"
+        if severity == "high":
+            logger.warning(log_msg)
+        else:
+            logger.info(log_msg)
+
+    def _inspect_input(self, query: str, customer_email: str = None) -> Dict[str, Any]:
+        """
+        """
+        query_lower = query.lower()
+        patterns_matched = []
+
+
+        flagged = len(patterns_matched) > 0
+
+        # Log if suspicious patterns detected
+        if flagged:
+            self._log_security_event(
+                event_type="suspicious_input",
+                severity=risk_level,
+                details=f"Detected patterns: {', '.join(patterns_matched)}",
+                query=query,
+                customer_email=customer_email
+            )
+
+        return {
+            "flagged": flagged,
+            "patterns_matched": patterns_matched,
+            "risk_level": risk_level
+        }
+
+    def get_security_log(self) -> List[Dict]:
+        """Return the security log for monitoring."""
+        return self.security_log.copy()
+
+    def clear_security_log(self):
+        """Clear the security log."""
+        self.security_log = []
+        logger.info("Security log cleared")
+
+    def _build_history_context(self) -> str:
+        """Build conversation history context for prompts."""
+        if not self.conversation_history:
+            return ""
+
+        history_lines = []
+        for exchange in self.conversation_history[-self.max_history:]:
+            history_lines.append(f"Customer: {exchange['user']}")
+            history_lines.append(f"Agent: {exchange['assistant']}")
+
+        return "\nPrevious Conversation:\n" + "\n".join(history_lines) + "\n"
+
+    def _save_exchange(self, user_message: str, assistant_response: str):
+        """Save an exchange to conversation history."""
+        self.conversation_history.append({
+            "user": user_message,
+            "assistant": assistant_response
+        })
+        # Keep only the last max_history exchanges
+        if len(self.conversation_history) > self.max_history:
+            self.conversation_history = self.conversation_history[-self.max_history:]
 
     # ─── MCP Connection ────────────────────────────────────────────────────
 
@@ -290,16 +389,6 @@ class OmniTechAgent:
                 result["confidence"] = 0.8
 
             # Create ticket if needed
-            if result.get("action_needed") == "create_ticket" and customer_email:
-                if "create_support_ticket" in self.available_tools:
-                    ticket = await self.call_tool("create_support_ticket", {
-                        "customer_email": customer_email,
-                        "issue_type": category,
-                        "description": query,
-                        "priority": "medium"
-                    })
-                    result["ticket_created"] = ticket
-                    workflow_log.append(f"[INFO] Created ticket: {ticket.get('id', 'unknown')}")
 
             # Add metadata
             result["classification"] = {
@@ -402,6 +491,10 @@ class OmniTechAgent:
             result["llm_model"] = HF_MODEL
             result["customer_email"] = customer_email
             result["processing_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
+
+            # Save this exchange to conversation history
+            self._save_exchange(query, result.get("response", ""))
+
             return result
 
         except Exception as e:
@@ -469,6 +562,10 @@ class SyncAgent:
         """Get MCP call log."""
         return self.agent.mcp_calls_log
 
+    def clear_history(self):
+        """Clear conversation history."""
+        self.agent.clear_history()
+
     def get_server_stats(self) -> Dict[str, Any]:
         """Get server stats."""
         if not self.loop:
@@ -478,6 +575,14 @@ class SyncAgent:
     def get_available_tools(self) -> List[str]:
         """Get list of available MCP tools."""
         return self.agent.available_tools
+
+    def get_security_log(self) -> List[Dict]:
+        """Get security event log."""
+        return self.agent.get_security_log()
+
+    def clear_security_log(self):
+        """Clear security log."""
+        self.agent.clear_security_log()
 
     def __del__(self):
         """Cleanup."""
@@ -513,6 +618,9 @@ async def interactive_mode():
     print("  'demo' - run sample queries")
     print("  'stats' - show server statistics")
     print("  'email:xxx' - set customer email for context")
+    print("  'clear' - clear conversation history")
+    print()
+    print("Note: The agent remembers your last 3 exchanges for follow-up context!")
     print()
 
     customer_email = "john.doe@email.com"
@@ -543,6 +651,9 @@ async def interactive_mode():
                 stats = await agent.get_server_stats()
                 print(f"\n{BLUE}Server Stats:{RESET}")
                 print(json.dumps(stats, indent=2))
+            elif user_input.lower() == "clear":
+                agent.clear_history()
+                print("Conversation history cleared. Starting fresh!")
             elif user_input.lower().startswith("email:"):
                 customer_email = user_input[6:].strip()
                 print(f"Customer set to: {customer_email}")
